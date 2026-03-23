@@ -1,0 +1,619 @@
+openapi: 3.0.3
+info:
+  title: API Биржи фрилансеров
+  description: Интерактивная документация REST API для платформы взаимодействия фрилансеров и заказчиков.
+  version: 1.0.0
+servers:
+  - url: https://api.yourfreelance.com
+    description: Основной сервер
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: Вход в систему (Авторизация)
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверные учетные данные
+
+  /api/v1/auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /api/v1/users/{userId}:
+    get:
+      summary: Получение профиля пользователя
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Данные профиля
+
+  /api/v1/services:
+    get:
+      summary: Поиск услуг (объявлений)
+      tags:
+        - Services
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: tags
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Список услуг
+    post:
+      summary: Создание новой услуги
+      tags:
+        - Services
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                tags:
+                  type: array
+                  items:
+                    type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Услуга создана и отправлена на модерацию
+
+  /api/v1/projects:
+    post:
+      summary: Публикация нового проекта (заказа)
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                budgetType:
+                  type: string
+                  enum: [FIXED, HOURLY]
+                budget:
+                  type: number
+                requiredSkills:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Проект опубликован
+
+  /api/v1/projects/{projectId}/bids:
+    post:
+      summary: Отправка отклика на проект
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                proposedPrice:
+                  type: number
+                deliveryTimeDays:
+                  type: integer
+                coverLetter:
+                  type: string
+      responses:
+        '201':
+          description: Отклик отправлен
+
+  /api/v1/users/{userId}/portfolio:
+    get:
+      summary: Получить структуру портфолио фрилансера
+      tags:
+        - Portfolio
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список папок и файлов портфолио
+
+  /api/v1/favorites/albums:
+    post:
+      summary: Создание альбома для избранного
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Альбом создан
+
+  /api/v1/favorites/items:
+    post:
+      summary: Добавление услуги или исполнителя в избранное
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityType:
+                  type: string
+                  enum: [SERVICE, FREELANCER]
+                entityId:
+                  type: string
+                albumId:
+                  type: string
+      responses:
+        '201':
+          description: Добавлено в избранное
+
+  /api/v1/contracts/{contractId}/reviews:
+    post:
+      summary: Оставить отзыв о сделке
+      tags:
+        - Reviews
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: contractId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Отзыв успешно добавлен
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            status:
+              type: string
+            token:
+              type: stringopenapi: 3.0.3
+info:
+  title: API Биржи фрилансеров
+  description: Интерактивная документация REST API для платформы взаимодействия фрилансеров и заказчиков.
+  version: 1.0.0
+servers:
+  - url: https://api.yourfreelance.com
+    description: Основной сервер
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: Вход в систему (Авторизация)
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверные учетные данные
+
+  /api/v1/auth/register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /api/v1/users/{userId}:
+    get:
+      summary: Получение профиля пользователя
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Данные профиля
+
+  /api/v1/services:
+    get:
+      summary: Поиск услуг (объявлений)
+      tags:
+        - Services
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: tags
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Список услуг
+    post:
+      summary: Создание новой услуги
+      tags:
+        - Services
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+                tags:
+                  type: array
+                  items:
+                    type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Услуга создана и отправлена на модерацию
+
+  /api/v1/projects:
+    post:
+      summary: Публикация нового проекта (заказа)
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                budgetType:
+                  type: string
+                  enum: [FIXED, HOURLY]
+                budget:
+                  type: number
+                requiredSkills:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Проект опубликован
+
+  /api/v1/projects/{projectId}/bids:
+    post:
+      summary: Отправка отклика на проект
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: projectId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                proposedPrice:
+                  type: number
+                deliveryTimeDays:
+                  type: integer
+                coverLetter:
+                  type: string
+      responses:
+        '201':
+          description: Отклик отправлен
+
+  /api/v1/users/{userId}/portfolio:
+    get:
+      summary: Получить структуру портфолио фрилансера
+      tags:
+        - Portfolio
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список папок и файлов портфолио
+
+  /api/v1/favorites/albums:
+    post:
+      summary: Создание альбома для избранного
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Альбом создан
+
+  /api/v1/favorites/items:
+    post:
+      summary: Добавление услуги или исполнителя в избранное
+      tags:
+        - Favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityType:
+                  type: string
+                  enum: [SERVICE, FREELANCER]
+                entityId:
+                  type: string
+                albumId:
+                  type: string
+      responses:
+        '201':
+          description: Добавлено в избранное
+
+  /api/v1/contracts/{contractId}/reviews:
+    post:
+      summary: Оставить отзыв о сделке
+      tags:
+        - Reviews
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: contractId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Отзыв успешно добавлен
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            status:
+              type: string
+            token:
+              type: string
