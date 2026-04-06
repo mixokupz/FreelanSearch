@@ -182,7 +182,7 @@ paths:
                         items:
                           $ref: '#/components/schemas/Deal'
 
-  /api/v1/reviews:
+  /api/v1/reviews/me:
     get:
       summary: Получить отзывы о текущем пользователе
       tags:
