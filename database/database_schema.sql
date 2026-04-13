@@ -302,21 +302,40 @@ INSERT INTO services (user_id, category_id, title, description, price, price_typ
 (14, 12, 'Репетитор по английскому (IELTS)','Подготовка к IELTS и TOEFL. 100% студентов сдали с первого раза.',      1800.00, 'hourly',  'active');
 
 INSERT INTO service_photos (service_id, url, sort_order) VALUES
-(1,  'https://cdn.example.com/photos/s1_1.jpg', 0),
-(1,  'https://cdn.example.com/photos/s1_2.jpg', 1),
-(2,  'https://cdn.example.com/photos/s2_1.jpg', 0),
-(3,  'https://cdn.example.com/photos/s3_1.jpg', 0),
-(5,  'https://cdn.example.com/photos/s5_1.jpg', 0),
-(5,  'https://cdn.example.com/photos/s5_2.jpg', 1),
-(5,  'https://cdn.example.com/photos/s5_3.jpg', 2),
-(6,  'https://cdn.example.com/photos/s6_1.jpg', 0),
-(6,  'https://cdn.example.com/photos/s6_2.jpg', 1),
-(7,  'https://cdn.example.com/photos/s7_1.jpg', 0),
-(9,  'https://cdn.example.com/photos/s9_1.jpg', 0),
-(10, 'https://cdn.example.com/photos/s10_1.jpg',0),
-(12, 'https://cdn.example.com/photos/s12_1.jpg',0),
-(13, 'https://cdn.example.com/photos/s13_1.jpg',0),
-(13, 'https://cdn.example.com/photos/s13_2.jpg',1);
+-- service 1: Замена труб и кранов
+(1,  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80', 0),
+(1,  'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&q=80', 1),
+
+-- service 2: Установка водонагревателя
+(2,  'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80', 0),
+
+-- service 3: Репетитор математика (ЕГЭ)
+(3,  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80', 0),
+
+-- service 5: Разработка логотипа
+(5,  'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&q=80', 0),
+(5,  'https://images.unsplash.com/photo-1572044162444-ad60f128bdea?w=800&q=80', 1),
+(5,  'https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&q=80', 2),
+
+-- service 6: Фотосъёмка мероприятий
+(6,  'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=800&q=80', 0),
+(6,  'https://images.unsplash.com/photo-1471341971476-ae15ff5dd4ea?w=800&q=80', 1),
+
+-- service 7: Прокладка электропроводки
+(7,  'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80', 0),
+
+-- service 9: Разработка Telegram-бота
+(9,  'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&q=80', 0),
+
+-- service 10: Ведение бухгалтерии
+(10, 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80', 0),
+
+-- service 12: Макияж
+(12, 'https://images.unsplash.com/photo-1487412840181-b8d56de36f6b?w=800&q=80', 0),
+
+-- service 13: Дизайн интерфейса (UI)
+(13, 'https://images.unsplash.com/photo-1616499615959-ba8b98b00fe4?w=800&q=80', 0),
+(13, 'https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=800&q=80', 1);
 
 INSERT INTO service_tags (service_id, tag_id) VALUES
 (1,  1),  -- срочно
