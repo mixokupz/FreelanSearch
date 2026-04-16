@@ -13,10 +13,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        AuthResponse response = new AuthResponse();
-        response.setToken("mock-token-for-" + request.getEmail());
-        response.setUserId("1");
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    AuthResponse.of(null, null)
+            );
+        }
 
+        AuthResponse response = AuthResponse.of("1", "mock-token-for-" + request.getEmail());
         return ResponseEntity.ok(response);
     }
 
@@ -29,18 +32,16 @@ public class AuthController {
 
             return ResponseEntity
                     .badRequest()
-                    .body(new ErrorResponse("Invalid input data"));
+                    .body(new ErrorResponse(false, "Invalid input data"));
         }
 
         if ("test@example.com".equals(request.getEmail())) {
             return ResponseEntity
                     .status(409)
-                    .body(new ErrorResponse("User already exists"));
+                    .body(new ErrorResponse(false, "User already exists"));
         }
 
-        AuthResponse response = new AuthResponse();
-        response.setToken("mock-token-for-" + request.getEmail());
-        response.setUserId("1");
+        AuthResponse response = AuthResponse.of("1", "mock-token-for-" + request.getEmail());
 
         return ResponseEntity
                 .status(201)

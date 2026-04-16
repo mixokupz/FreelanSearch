@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ErrorResponse {
-    private Boolean success;
-    private String message;
+public class ReviewSummary {
+    private Integer totalCount;
+    private Double avgRating;
 }
