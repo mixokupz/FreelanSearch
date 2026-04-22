@@ -6,7 +6,9 @@ info:
 servers:
   - url: https://api.yourfreelance.com
     description: Основной сервер
+
 paths:
+
   /api/v1/auth/login:
     post:
       summary: Вход в систему (Авторизация)
@@ -35,13 +37,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
-          description: Ошибка валидации (например, неверный формат email или пустой пароль)
+          description: Ошибка валидации
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: Неверные учетные данные (Неверный email или пароль)
+          description: Неверные учетные данные
           content:
             application/json:
               schema:
@@ -78,21 +80,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
-          description: Ошибка валидации (слишком короткий пароль, пустое имя и т.д.)
+          description: Ошибка валидации
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: Конфликт данных (Пользователь с таким email уже существует)
+          description: Конфликт данных
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+
+  /api/v1/users:
+    get:
+      summary: Получить список пользователей (Каталог фрилансеров)
+      operationId: getUsersList
+      tags:
+        - Users
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserProfileResponse'
+                      total_count:
+                        type: integer
+
   /api/v1/users/me:
     get:
-      summary: Получить профиль текущего пользователя (профиль фрилансера + профиль заказчика)
+      summary: Получить профиль текущего пользователя
       operationId: getCurrentUserProfile
       tags:
         - Users
@@ -118,9 +166,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/services/me:
+
+
+  
+  /api/v1/users/me/services:
     get:
-      summary: Получить услуги текущего пользователя
+      summary: Получить список услуг текущего пользователя
       operationId: getCurrentUserServices
       tags:
         - Services
@@ -145,9 +196,44 @@ paths:
                         items:
                           $ref: '#/components/schemas/UserServiceResponse'
 
-  /api/v1/deals:
+  /api/v1/users/{id}/services:
     get:
-      summary: Получить список сделок текущего пользователя (в параметрах указывается сделки кого отображать - фрилансера или заказчика)
+      summary: Получить список услуг конкретного пользователя (фрилансера)
+      operationId: getUserServicesByUserId
+      tags:
+        - Services
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserServiceResponse'
+
+ 
+
+
+  /api/v1/users/me/deals:
+    get:
+      summary: Получить список сделок текущего пользователя
+      operationId: getCurrentUserDeals
       tags:
         - Deals
       security:
@@ -182,9 +268,11 @@ paths:
                         items:
                           $ref: '#/components/schemas/DealResponse'
 
-  /api/v1/reviews/me:
+  
+  /api/v1/users/me/reviews:
     get:
       summary: Получить отзывы о текущем пользователе
+      operationId: getCurrentUserReviews
       tags:
         - Reviews
       security:
@@ -196,9 +284,6 @@ paths:
             type: string
             enum: [customer, freelancer]
           required: true
-          description: |
-            - `freelancer` - отзывы о пользователе как об исполнителе
-            - `customer` - отзывы о пользователе как о заказчике
       responses:
         '200':
           description: Успешный ответ
@@ -224,6 +309,57 @@ paths:
                             type: integer
                           avg_rating:
                             type: number
+
+  /api/v1/users/{id}/reviews:
+    get:
+      summary: Получить отзывы о конкретном пользователе
+      operationId: getUserReviewsById
+      tags:
+        - Reviews
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [customer, freelancer]
+          required: true
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReviewResponse'
+                      summary:
+                        type: object
+                        properties:
+                          total_count:
+                            type: integer
+                          avg_rating:
+                            type: number
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
 components:
   securitySchemes:
@@ -270,6 +406,17 @@ components:
         reviews_count:
           type: integer
           minimum: 0
+        tags:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              slug:
+                type: string
 
     UserServiceResponse:
       type: object
@@ -301,7 +448,6 @@ components:
               type: string
             slug:
               type: string
-       
         tags:
           type: array
           items:
