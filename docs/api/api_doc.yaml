@@ -34,8 +34,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Ошибка валидации (например, неверный формат email или пустой пароль)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: Неверные учетные данные
+          description: Неверные учетные данные (Неверный email или пароль)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/auth/register:
     post:
@@ -67,542 +77,326 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
-
-  /api/v1/users/{userId}:
-    get:
-      summary: Получение профиля пользователя
-      tags:
-        - Users
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Данные профиля
-
-  /api/v1/services:
-    get:
-      summary: Поиск услуг (объявлений)
-      tags:
-        - Services
-      parameters:
-        - in: query
-          name: search
-          schema:
-            type: string
-        - in: query
-          name: tags
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        '200':
-          description: Список услуг
-    post:
-      summary: Создание новой услуги
-      tags:
-        - Services
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                description:
-                  type: string
-                price:
-                  type: number
-                tags:
-                  type: array
-                  items:
-                    type: string
-                images:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '201':
-          description: Услуга создана и отправлена на модерацию
-
-  /api/v1/projects:
-    post:
-      summary: Публикация нового проекта (заказа)
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - description
-              properties:
-                title:
-                  type: string
-                description:
-                  type: string
-                budgetType:
-                  type: string
-                  enum: [FIXED, HOURLY]
-                budget:
-                  type: number
-                requiredSkills:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '201':
-          description: Проект опубликован
-
-  /api/v1/projects/{projectId}/bids:
-    post:
-      summary: Отправка отклика на проект
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: projectId
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                proposedPrice:
-                  type: number
-                deliveryTimeDays:
-                  type: integer
-                coverLetter:
-                  type: string
-      responses:
-        '201':
-          description: Отклик отправлен
-
-  /api/v1/users/{userId}/portfolio:
-    get:
-      summary: Получить структуру портфолио фрилансера
-      tags:
-        - Portfolio
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Список папок и файлов портфолио
-
-  /api/v1/favorites/albums:
-    post:
-      summary: Создание альбома для избранного
-      tags:
-        - Favorites
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-      responses:
-        '201':
-          description: Альбом создан
-
-  /api/v1/favorites/items:
-    post:
-      summary: Добавление услуги или исполнителя в избранное
-      tags:
-        - Favorites
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                entityType:
-                  type: string
-                  enum: [SERVICE, FREELANCER]
-                entityId:
-                  type: string
-                albumId:
-                  type: string
-      responses:
-        '201':
-          description: Добавлено в избранное
-
-  /api/v1/contracts/{contractId}/reviews:
-    post:
-      summary: Оставить отзыв о сделке
-      tags:
-        - Reviews
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: contractId
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                rating:
-                  type: integer
-                  minimum: 1
-                  maximum: 5
-                comment:
-                  type: string
-      responses:
-        '201':
-          description: Отзыв успешно добавлен
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-  schemas:
-    AuthResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-        data:
-          type: object
-          properties:
-            userId:
-              type: string
-            status:
-              type: string
-            token:
-              type: stringopenapi: 3.0.3
-info:
-  title: API Биржи фрилансеров
-  description: Интерактивная документация REST API для платформы взаимодействия фрилансеров и заказчиков.
-  version: 1.0.0
-servers:
-  - url: https://api.yourfreelance.com
-    description: Основной сервер
-paths:
-  /api/v1/auth/login:
-    post:
-      summary: Вход в систему (Авторизация)
-      tags:
-        - Auth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-      responses:
-        '200':
-          description: Успешный вход
+        '400':
+          description: Ошибка валидации (слишком короткий пароль, пустое имя и т.д.)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Конфликт данных (Пользователь с таким email уже существует)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/me:
+    get:
+      summary: Получить профиль текущего пользователя (профиль фрилансера + профиль заказчика)
+      operationId: getCurrentUserProfile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/UserProfileResponse'
         '401':
-          description: Неверные учетные данные
-
-  /api/v1/auth/register:
-    post:
-      summary: Регистрация нового пользователя
-      tags:
-        - Auth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-                - name
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                name:
-                  type: string
-      responses:
-        '201':
-          description: Пользователь успешно зарегистрирован
+          description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/{userId}:
+  /api/v1/services/me:
     get:
-      summary: Получение профиля пользователя
-      tags:
-        - Users
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Данные профиля
-
-  /api/v1/services:
-    get:
-      summary: Поиск услуг (объявлений)
-      tags:
-        - Services
-      parameters:
-        - in: query
-          name: search
-          schema:
-            type: string
-        - in: query
-          name: tags
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        '200':
-          description: Список услуг
-    post:
-      summary: Создание новой услуги
+      summary: Получить услуги текущего пользователя
+      operationId: getCurrentUserServices
       tags:
         - Services
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                description:
-                  type: string
-                price:
-                  type: number
-                tags:
-                  type: array
-                  items:
-                    type: string
-                images:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '201':
-          description: Услуга создана и отправлена на модерацию
-
-  /api/v1/projects:
-    post:
-      summary: Публикация нового проекта (заказа)
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - title
-                - description
-              properties:
-                title:
-                  type: string
-                description:
-                  type: string
-                budgetType:
-                  type: string
-                  enum: [FIXED, HOURLY]
-                budget:
-                  type: number
-                requiredSkills:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '201':
-          description: Проект опубликован
-
-  /api/v1/projects/{projectId}/bids:
-    post:
-      summary: Отправка отклика на проект
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: projectId
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                proposedPrice:
-                  type: number
-                deliveryTimeDays:
-                  type: integer
-                coverLetter:
-                  type: string
-      responses:
-        '201':
-          description: Отклик отправлен
-
-  /api/v1/users/{userId}/portfolio:
-    get:
-      summary: Получить структуру портфолио фрилансера
-      tags:
-        - Portfolio
-      parameters:
-        - in: path
-          name: userId
-          required: true
-          schema:
-            type: string
       responses:
         '200':
-          description: Список папок и файлов портфолио
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserServiceResponse'
 
-  /api/v1/favorites/albums:
-    post:
-      summary: Создание альбома для избранного
+  /api/v1/deals:
+    get:
+      summary: Получить список сделок текущего пользователя (в параметрах указывается сделки кого отображать - фрилансера или заказчика)
       tags:
-        - Favorites
+        - Deals
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
+      parameters:
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [customer, freelancer]
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [in_progress, completed, cancelled, disputed]
       responses:
-        '201':
-          description: Альбом создан
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DealResponse'
 
-  /api/v1/favorites/items:
-    post:
-      summary: Добавление услуги или исполнителя в избранное
-      tags:
-        - Favorites
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                entityType:
-                  type: string
-                  enum: [SERVICE, FREELANCER]
-                entityId:
-                  type: string
-                albumId:
-                  type: string
-      responses:
-        '201':
-          description: Добавлено в избранное
-
-  /api/v1/contracts/{contractId}/reviews:
-    post:
-      summary: Оставить отзыв о сделке
+  /api/v1/reviews/me:
+    get:
+      summary: Получить отзывы о текущем пользователе
       tags:
         - Reviews
       security:
         - bearerAuth: []
       parameters:
-        - in: path
-          name: contractId
-          required: true
+        - in: query
+          name: role
           schema:
             type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                rating:
-                  type: integer
-                  minimum: 1
-                  maximum: 5
-                comment:
-                  type: string
+            enum: [customer, freelancer]
+          required: true
+          description: |
+            - `freelancer` - отзывы о пользователе как об исполнителе
+            - `customer` - отзывы о пользователе как о заказчике
       responses:
-        '201':
-          description: Отзыв успешно добавлен
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ReviewResponse'
+                      summary:
+                        type: object
+                        properties:
+                          total_count:
+                            type: integer
+                          avg_rating:
+                            type: number
 
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+
   schemas:
+    UserProfileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [user, admin, moderator]
+        is_blocked:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        name:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        avg_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+        reviews_count:
+          type: integer
+          minimum: 0
+
+    UserServiceResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        execution_period_days:
+          type: integer
+        price:
+          type: number
+          format: decimal
+          nullable: true
+        price_type:
+          type: string
+          enum: [fixed, negotiable, free]
+        status:
+          type: string
+          enum: [pending, active, rejected, archived]
+        category:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            slug:
+              type: string
+       
+        tags:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              slug:
+                type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DealResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        client:
+          type: object
+          properties:
+            id:
+              type: integer
+            display_name:
+              type: string
+            avatar_url:
+              type: string
+              nullable: true
+        executor:
+          type: object
+          properties:
+            id:
+              type: integer
+            display_name:
+              type: string
+            avatar_url:
+              type: string
+              nullable: true
+        service:
+          type: object
+          properties:
+            id:
+              type: integer
+              nullable: true
+            title:
+              type: string
+        status:
+          type: string
+          enum: [in_progress, completed, cancelled, disputed]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        payment:
+          type: integer
+
+    ReviewResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        deal_id:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        author:
+          type: object
+          properties:
+            id:
+              type: integer
+            display_name:
+              type: string
+            avatar_url:
+              type: string
+              nullable: true
+        target_role:
+          type: string
+          enum: [executor, client]
+        created_at:
+          type: string
+          format: date-time
+
     AuthResponse:
       type: object
       properties:
@@ -617,3 +411,12 @@ components:
               type: string
             token:
               type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
