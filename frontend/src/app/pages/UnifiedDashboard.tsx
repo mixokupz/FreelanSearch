@@ -24,6 +24,8 @@ import {
   LocateOffIcon,
   MailCheck,
   MailIcon,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import { getCurrentUser, mockDeals, mockMessages, getUserById, getServicesByFreelancer, getReviewsByFreelancer, mockUsers } from "../data/mockData";
 import { useState } from "react";
@@ -348,11 +350,11 @@ export function UnifiedDashboard() {
                           отзывов)
                         </div>
                         <div>
-                          <Briefcase className="w-4 h-4 inline mr-1" />
+                          <Calendar className="w-4 h-4 inline mr-1" />
                           зарегистрирован {freelancerData.joinedDate}
                         </div>
                         <div>
-                          <LocateIcon className="w-4 h-4 inline mr-1" />
+                          <MapPin className="w-4 h-4 inline mr-1" />
                           {freelancerData.location}
                         </div>
                         <div>

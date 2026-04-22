@@ -24,7 +24,7 @@ export function SearchPage() {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [category, setCategory] = useState(initialCategory);
   const [priceRange, setPriceRange] = useState("all");
-  const [sortBy, setSortBy] = useState("relevance");
+  const [sortBy, setSortBy] = useState("popularity");
 
   const freelancers = useMemo(() => {
     return mockUsers.filter((user) => user.role === "freelancer");
@@ -92,18 +92,7 @@ export function SearchPage() {
               </Button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {["Дизайн", "Разработка", "Маркетинг", "Тексты", "Видео"].map((cat) => (
-                <Button
-                  key={cat}
-                  variant={category === cat ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCategory(category === cat ? "" : cat)}
-                >
-                  {cat}
-                </Button>
-              ))}
-            </div>
+          
           </div>
         </div>
 
@@ -120,7 +109,7 @@ export function SearchPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium mb-2 block">
+                      {/* <label className="text-sm font-medium mb-2 block">
                         Цена за час
                       </label>
                       <Select value={priceRange} onValueChange={setPriceRange}>
@@ -133,7 +122,7 @@ export function SearchPage() {
                           <SelectItem value="medium">2000 - 3000 ₽</SelectItem>
                           <SelectItem value="high">От 3000 ₽</SelectItem>
                         </SelectContent>
-                      </Select>
+                      </Select> */}
                     </div>
 
                     <div>
@@ -145,14 +134,14 @@ export function SearchPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="relevance">По релевантности</SelectItem>
+                          <SelectItem value="popularity">По популярности</SelectItem>
                           <SelectItem value="rating">По рейтингу</SelectItem>
-                          <SelectItem value="price-low">
+                          {/* <SelectItem value="price-low">
                             Цена: по возрастанию
                           </SelectItem>
                           <SelectItem value="price-high">
                             Цена: по убыванию
-                          </SelectItem>
+                          </SelectItem> */}
                         </SelectContent>
                       </Select>
                     </div>
@@ -197,12 +186,7 @@ export function SearchPage() {
                               </div>
                             </div>
 
-                            <div className="text-right">
-                              <div className="text-2xl font-bold">
-                                {freelancer.hourlyRate?.toLocaleString()} ₽
-                              </div>
-                              <div className="text-sm text-gray-600">за час</div>
-                            </div>
+                           
                           </div>
 
                           <div className="flex items-center gap-4 mb-3">
@@ -213,9 +197,7 @@ export function SearchPage() {
                                 ({freelancer.reviewCount} отзывов)
                               </span>
                             </div>
-                            <div className="text-sm text-gray-600">
-                              {freelancer.completedJobs} выполненных работ
-                            </div>
+                           
                           </div>
 
                           <p className="text-gray-700 mb-3 line-clamp-2">

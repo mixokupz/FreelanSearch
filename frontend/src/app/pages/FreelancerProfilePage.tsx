@@ -13,6 +13,7 @@ import {
   Award,
   MessageSquare,
   Globe,
+  MailIcon,
 } from "lucide-react";
 import {
   getUserById,
@@ -72,6 +73,10 @@ export function FreelancerProfilePage() {
                       <Globe className="w-4 h-4" />
                       {freelancer.languages?.join(", ")}
                     </div>
+                    <div className="flex items-center gap-1">
+                      <MailIcon className="w-4 h-4" />
+                      {freelancer.email}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-6 mb-4">
@@ -103,17 +108,7 @@ export function FreelancerProfilePage() {
                     ))}
                   </div>
 
-                  <div className="flex gap-3">
-                    <Button size="lg" asChild>
-                      <Link to="/messages">
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Связаться
-                      </Link>
-                    </Button>
-                    <Button size="lg" variant="outline">
-                      {freelancer.hourlyRate?.toLocaleString()} ₽/час
-                    </Button>
-                  </div>
+
                 </div>
               </div>
             </CardContent>
@@ -121,10 +116,10 @@ export function FreelancerProfilePage() {
 
           {/* Tabs */}
           <Tabs defaultValue="services" className="mb-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="services">Услуги</TabsTrigger>
               <TabsTrigger value="reviews">Отзывы</TabsTrigger>
-              <TabsTrigger value="portfolio">Портфолио</TabsTrigger>
+              {/* <TabsTrigger value="portfolio">Портфолио</TabsTrigger> */}
             </TabsList>
 
             <TabsContent value="services" className="space-y-4">
@@ -204,11 +199,10 @@ export function FreelancerProfilePage() {
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`w-5 h-5 ${
-                                    i < review.rating
+                                  className={`w-5 h-5 ${i < review.rating
                                       ? "fill-yellow-400 text-yellow-400"
                                       : "text-gray-300"
-                                  }`}
+                                    }`}
                                 />
                               ))}
                             </div>
@@ -227,7 +221,7 @@ export function FreelancerProfilePage() {
                 </Card>
               )}
             </TabsContent>
-
+{/* 
             <TabsContent value="portfolio" className="space-y-4">
               <Card>
                 <CardContent className="pt-6">
@@ -243,12 +237,12 @@ export function FreelancerProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </div>
       </div>
 
-    
+
     </div>
   );
 }
