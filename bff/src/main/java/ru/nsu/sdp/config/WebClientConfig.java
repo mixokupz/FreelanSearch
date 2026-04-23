@@ -25,9 +25,9 @@ public class WebClientConfig {
     }
 
     @Bean
-    public WebClient serviceWebClient(@Value("${services.service.base-url:https://api.yourfreelance.com}") String serviceServiceBaseUrl) {
+    public WebClient searchWebClient(@Value("${services.search.base-url:https://api.yourfreelance.com}") String searchServiceBaseUrl) {
         return WebClient.builder()
-                .baseUrl(serviceServiceBaseUrl)
+                .baseUrl(searchServiceBaseUrl)
                 .build();
     }
 }

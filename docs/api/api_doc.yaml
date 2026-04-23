@@ -168,7 +168,7 @@ paths:
 
   /api/v1/services:
     get:
-      summary: Получить объявления с автором и изображением
+      summary: Получить объявления с поиском и сортировкой через Search Service
       operationId: getServiceAnnouncements
       tags:
         - Services
@@ -188,6 +188,16 @@ paths:
           name: search
           schema:
             type: string
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            example: relevance
+        - in: query
+          name: sort_order
+          schema:
+            type: string
+            enum: [asc, desc]
       responses:
         '200':
           description: Успешный ответ
