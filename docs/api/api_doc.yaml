@@ -168,7 +168,7 @@ paths:
 
 
 
-  
+
   /api/v1/users/me/services:
     get:
       summary: Получить список услуг текущего пользователя
@@ -227,7 +227,7 @@ paths:
                         items:
                           $ref: '#/components/schemas/UserServiceResponse'
 
- 
+
 
 
   /api/v1/users/me/deals:
@@ -268,7 +268,7 @@ paths:
                         items:
                           $ref: '#/components/schemas/DealResponse'
 
-  
+
   /api/v1/users/me/reviews:
     get:
       summary: Получить отзывы о текущем пользователе
