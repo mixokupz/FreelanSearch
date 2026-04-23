@@ -13,16 +13,14 @@ export function Header() {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold">FL</span>
           </div>
-          <span className="text-xl font-bold">FreelanceHub</span>
+          <span className="text-xl font-bold">FreelanSearch</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
           <Link to="/search" className="hover:text-blue-600">
             Найти фрилансера
           </Link>
-          <Link to="/search" className="hover:text-blue-600">
-            Услуги
-          </Link>
+        
           <Link to="/dashboard" className="hover:text-blue-600">
             Личный кабинет
           </Link>
@@ -51,9 +49,7 @@ export function Header() {
             <Link to="/search" className="hover:text-blue-600">
               Найти фрилансера
             </Link>
-            <Link to="/search" className="hover:text-blue-600">
-              Услуги
-            </Link>
+        
             <Link to="/dashboard" className="hover:text-blue-600">
               Личный кабинет
             </Link>

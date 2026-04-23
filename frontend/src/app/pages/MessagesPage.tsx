@@ -203,7 +203,7 @@ export function MessagesPage() {
         </div>
       </div>
 
-      <Footer />
+  
     </div>
   );
 }

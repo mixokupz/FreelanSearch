@@ -15,6 +15,29 @@ export interface User {
   languages?: string[];
 }
 
+export interface UserTag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface CatalogFreelancer {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  bio?: string;
+  location?: string;
+  rating?: number;
+  reviewCount?: number;
+  joinedDate?: string;
+  avatarUrl?: string;
+  isBlocked?: boolean;
+  skills?: string[];
+  tags?: UserTag[];
+}
+
 export interface Service {
   id: string;
   freelancerId: string;
