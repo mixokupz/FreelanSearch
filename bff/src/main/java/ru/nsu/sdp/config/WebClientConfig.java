@@ -23,4 +23,11 @@ public class WebClientConfig {
                 .baseUrl(mediaServiceBaseUrl)
                 .build();
     }
+
+    @Bean
+    public WebClient serviceWebClient(@Value("${services.service.base-url:https://api.yourfreelance.com}") String serviceServiceBaseUrl) {
+        return WebClient.builder()
+                .baseUrl(serviceServiceBaseUrl)
+                .build();
+    }
 }
