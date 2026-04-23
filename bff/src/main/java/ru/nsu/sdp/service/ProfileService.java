@@ -19,8 +19,16 @@ public class ProfileService {
     private final WebClient webClient;
 
     public ApiResponse<UserProfile> getCurrentUserProfile(String authorizationHeader) {
+        return fetchProfile("/api/v1/users/me", authorizationHeader);
+    }
+
+    public ApiResponse<UserProfile> getUserProfileById(Integer userId, String authorizationHeader) {
+        return fetchProfile("/api/v1/users/{id}", authorizationHeader, userId);
+    }
+
+    private ApiResponse<UserProfile> fetchProfile(String uri, String authorizationHeader, Object... uriVariables) {
         WebClient.RequestHeadersSpec<?> request = webClient.get()
-                .uri("/api/v1/users/me");
+                .uri(uri, uriVariables);
 
         if (authorizationHeader != null && !authorizationHeader.isBlank()) {
             request = request.header("Authorization", authorizationHeader);
