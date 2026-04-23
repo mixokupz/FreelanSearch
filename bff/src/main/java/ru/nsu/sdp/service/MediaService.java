@@ -30,7 +30,24 @@ public class MediaService {
                 .block();
 
         ResponseEntity<byte[]> response = Objects.requireNonNull(mediaResponse, "Media service returned empty response");
-        Objects.requireNonNull(response.getBody(), "Media service returned empty image body");
-        return response;
+        byte[] body = Objects.requireNonNull(response.getBody(), "Media service returned empty image body");
+
+        HttpHeaders headers = new HttpHeaders();
+        if (response.getHeaders().getContentType() != null) {
+            headers.setContentType(response.getHeaders().getContentType());
+        }
+        if (response.getHeaders().getContentLength() >= 0) {
+            headers.setContentLength(response.getHeaders().getContentLength());
+        }
+        String contentDisposition = response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
+        if (contentDisposition != null) {
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, contentDisposition);
+        }
+        String cacheControl = response.getHeaders().getCacheControl();
+        if (cacheControl != null && !cacheControl.isBlank()) {
+            headers.setCacheControl(cacheControl);
+        }
+
+        return new ResponseEntity<>(body, headers, response.getStatusCode());
     }
 }
