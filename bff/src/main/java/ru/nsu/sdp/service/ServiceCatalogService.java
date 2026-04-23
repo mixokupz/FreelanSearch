@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import ru.nsu.sdp.dto.ApiResponse;
 import ru.nsu.sdp.dto.ListResponse;
@@ -26,28 +27,28 @@ public class ServiceCatalogService {
     private static final ParameterizedTypeReference<ApiResponse<ListResponse<ServiceAdSource>>> SERVICE_ADS_RESPONSE_TYPE =
             new ParameterizedTypeReference<>() {};
 
-    @Qualifier("serviceWebClient")
-    private final WebClient serviceWebClient;
+    @Qualifier("searchWebClient")
+    private final WebClient searchWebClient;
     private final ProfileService profileService;
     private final MediaService mediaService;
 
     public ApiResponse<ListResponse<ServiceAdView>> getAnnouncements(
             String authorizationHeader,
-            Integer page,
-            Integer limit,
-            String search
+            MultiValueMap<String, String> queryParams
     ) {
-        WebClient.RequestHeadersSpec<?> request = serviceWebClient.get()
+        WebClient.RequestHeadersSpec<?> request = searchWebClient.get()
                 .uri(uriBuilder -> {
-                    var builder = uriBuilder.path("/api/v1/services");
-                    if (page != null) {
-                        builder = builder.queryParam("page", page);
-                    }
-                    if (limit != null) {
-                        builder = builder.queryParam("limit", limit);
-                    }
-                    if (search != null && !search.isBlank()) {
-                        builder = builder.queryParam("search", search);
+                    var builder = uriBuilder.path("/api/v1/search/services");
+                    if (queryParams != null && !queryParams.isEmpty()) {
+                        queryParams.forEach((key, values) -> {
+                            if (values == null || values.isEmpty()) {
+                                return;
+                            }
+
+                            for (String value : values) {
+                                builder.queryParam(key, value);
+                            }
+                        });
                     }
                     return builder.build();
                 });
@@ -62,11 +63,11 @@ public class ServiceCatalogService {
                 .block();
 
         ApiResponse<ListResponse<ServiceAdSource>> response =
-                Objects.requireNonNull(sourceResponse, "Service service returned empty response body");
+                Objects.requireNonNull(sourceResponse, "Search service returned empty response body");
         ListResponse<ServiceAdSource> sourceData =
-                Objects.requireNonNull(response.getData(), "Service service returned empty data");
+                Objects.requireNonNull(response.getData(), "Search service returned empty data");
         List<ServiceAdSource> sourceItems =
-                Objects.requireNonNull(sourceData.getItems(), "Service service returned empty items");
+                Objects.requireNonNull(sourceData.getItems(), "Search service returned empty items");
 
         List<ServiceAdView> mergedItems = sourceItems.stream()
                 .map(item -> mergeServiceAd(item, authorizationHeader))

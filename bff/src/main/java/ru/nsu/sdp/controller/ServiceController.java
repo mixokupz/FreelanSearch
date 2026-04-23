@@ -3,6 +3,7 @@ package ru.nsu.sdp.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.sdp.dto.*;
 import ru.nsu.sdp.service.ServiceCatalogService;
@@ -20,12 +21,10 @@ public class ServiceController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<ListResponse<ServiceAdView>>> getServiceAnnouncements(
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer limit,
-            @RequestParam(required = false) String search,
+            @RequestParam MultiValueMap<String, String> queryParams,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
         ApiResponse<ListResponse<ServiceAdView>> response =
-                serviceCatalogService.getAnnouncements(authorizationHeader, page, limit, search);
+                serviceCatalogService.getAnnouncements(authorizationHeader, queryParams);
         return ResponseEntity.ok(response);
     }
 
