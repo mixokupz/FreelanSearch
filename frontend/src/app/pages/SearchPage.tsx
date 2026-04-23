@@ -1,6 +1,5 @@
 import { Link, useSearchParams } from "react-router";
 import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
@@ -14,7 +13,47 @@ import {
 } from "../components/ui/select";
 import { Search, Star, MapPin, Filter } from "lucide-react";
 import { mockUsers, mockServices } from "../data/mockData";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { CatalogFreelancer } from "../types";
+
+type ApiUserProfileResponse = {
+  id: number;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  is_blocked: boolean;
+  created_at: string;
+  name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  city: string | null;
+  avg_rating: number;
+  reviews_count: number;
+  tags?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+};
+
+function mapApiUserToCatalogFreelancer(user: ApiUserProfileResponse): CatalogFreelancer {
+  return {
+    id: String(user.id),
+    name: user.name,
+    email: user.email ?? undefined,
+    phone: user.phone ?? undefined,
+    role: user.role,
+    bio: user.bio ?? "",
+    location: user.city ?? "Город не указан",
+    rating: user.avg_rating ?? 0,
+    reviewCount: user.reviews_count ?? 0,
+    joinedDate: user.created_at,
+    avatarUrl: user.avatar_url ?? undefined,
+    isBlocked: user.is_blocked,
+    skills: user.tags?.map((tag) => tag.name) ?? [],
+    tags: user.tags ?? [],
+  };
+}
 
 export function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -25,10 +64,60 @@ export function SearchPage() {
   const [category, setCategory] = useState(initialCategory);
   const [priceRange, setPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("popularity");
+  const [freelancers, setFreelancers] = useState<CatalogFreelancer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const freelancers = useMemo(() => {
-    return mockUsers.filter((user) => user.role === "freelancer");
-  }, []);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      try {
+        const API_URL = import.meta.env.VITE_API_URL;
+        const params = new URLSearchParams({
+          page: "1",
+          limit: "20",
+        });
+
+        if (searchQuery.trim()) {
+          params.set("search", searchQuery.trim());
+        }
+
+        const response = await fetch(`${API_URL}/api/v1/users?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить список пользователей");
+        }
+
+        const json = await response.json();
+        const items = (json.data?.items ?? []) as ApiUserProfileResponse[];
+        setFreelancers(items.map(mapApiUserToCatalogFreelancer));
+      } catch (error) {
+        console.warn("Фоллбэк каталога: сервер недоступен, используем моки", error);
+        setErrorMessage("Каталог загружен из локальных моков");
+        setFreelancers(
+          mockUsers
+            .filter((user) => user.role === "freelancer")
+            .map((user) => ({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+              bio: user.bio,
+              location: user.location,
+              rating: user.rating,
+              reviewCount: user.reviewCount,
+              joinedDate: user.joinedDate,
+              skills: user.skills,
+            }))
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [searchQuery]);
 
   const filteredFreelancers = useMemo(() => {
     let filtered = [...freelancers];
@@ -87,12 +176,14 @@ export function SearchPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1"
               />
-              <Button>
+              <Button type="button">
                 <Search className="w-5 h-5" />
               </Button>
             </div>
 
-          
+            {errorMessage && (
+              <p className="text-sm text-amber-600">{errorMessage}</p>
+            )}
           </div>
         </div>
 
@@ -158,11 +249,13 @@ export function SearchPage() {
             <div className="flex-1">
               <div className="mb-4">
                 <p className="text-gray-600">
-                  Найдено специалистов: {filteredFreelancers.length}
+                  {isLoading
+                    ? "Загружаем специалистов..."
+                    : `Найдено специалистов: ${filteredFreelancers.length}`}
                 </p>
               </div>
 
-              <div className="space-y-4">
+              {!isLoading && <div className="space-y-4">
                 {filteredFreelancers.map((freelancer) => (
                   <Card key={freelancer.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="pt-6">
@@ -176,13 +269,14 @@ export function SearchPage() {
                             <div>
                               <Link
                                 to={`/freelancer/${freelancer.id}`}
+                                state={{ freelancer }}
                                 className="text-xl font-semibold hover:text-blue-600"
                               >
                                 {freelancer.name}
                               </Link>
                               <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                                 <MapPin className="w-4 h-4" />
-                                {freelancer.location}
+                                {freelancer.location || "Город не указан"}
                               </div>
                             </div>
 
@@ -192,16 +286,16 @@ export function SearchPage() {
                           <div className="flex items-center gap-4 mb-3">
                             <div className="flex items-center gap-1">
                               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                              <span className="font-semibold">{freelancer.rating}</span>
+                              <span className="font-semibold">{freelancer.rating || 0}</span>
                               <span className="text-gray-600 text-sm">
-                                ({freelancer.reviewCount} отзывов)
+                                ({freelancer.reviewCount || 0} отзывов)
                               </span>
                             </div>
                            
                           </div>
 
                           <p className="text-gray-700 mb-3 line-clamp-2">
-                            {freelancer.bio}
+                            {freelancer.bio || "Пользователь пока не добавил описание"}
                           </p>
 
                           <div className="flex flex-wrap gap-2 mb-4">
@@ -214,7 +308,10 @@ export function SearchPage() {
 
                           <div className="flex gap-2">
                             <Button asChild>
-                              <Link to={`/freelancer/${freelancer.id}`}>
+                              <Link
+                                to={`/freelancer/${freelancer.id}`}
+                                state={{ freelancer }}
+                              >
                                 Посмотреть профиль
                               </Link>
                             </Button>
@@ -225,9 +322,9 @@ export function SearchPage() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </div>}
 
-              {filteredFreelancers.length === 0 && (
+              {!isLoading && filteredFreelancers.length === 0 && (
                 <Card>
                   <CardContent className="pt-6 text-center py-12">
                     <p className="text-gray-600 mb-4">
@@ -243,12 +340,18 @@ export function SearchPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {isLoading && (
+                <Card>
+                  <CardContent className="pt-6 text-center py-12">
+                    <p className="text-gray-600">Загружаем каталог специалистов...</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      
     </div>
   );
 }

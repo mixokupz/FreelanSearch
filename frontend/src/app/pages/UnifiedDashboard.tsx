@@ -7,46 +7,115 @@ import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   Briefcase,
-  MessageSquare,
-  Clock,
-  CheckCircle,
   Star,
-  DollarSign,
-  TrendingUp,
   Plus,
   Edit,
   ShoppingBag,
   Sparkles,
-  Zap,
-  LocateFixed,
-  LocateIcon,
-  LocateOff,
-  LocateOffIcon,
-  MailCheck,
-  MailIcon,
   MapPin,
   Calendar,
+  MailIcon,
 } from "lucide-react";
-import { getCurrentUser, mockDeals, mockMessages, getUserById, getServicesByFreelancer, getReviewsByFreelancer, mockUsers } from "../data/mockData";
-import { useState } from "react";
+import { 
+  getCurrentUser, 
+  mockDeals, 
+  mockMessages, 
+  getUserById, 
+  getServicesByFreelancer, 
+  getReviewsByFreelancer, 
+  mockUsers 
+} from "../data/mockData";
+import { useState, useEffect } from "react";
+import { toast } from "sonner"; // Если используешь sonner для уведомлений
 
 type DashboardMode = "client" | "freelancer";
 
 export function UnifiedDashboard() {
   const [mode, setMode] = useState<DashboardMode>("client");
-  const currentUser = getCurrentUser();
-  const userDeals = mockDeals.filter((deal) => deal.clientId === currentUser.id);
-  const userMessages = mockMessages.filter(
-    (msg) => msg.fromId === currentUser.id || msg.toId === currentUser.id
-  );
+  
+  // 1. Создаем состояния для наших данных
+  const [userData, setUserData] = useState<any>(null);
+  const [userDeals, setUserDeals] = useState<any[]>([]);
+  const [userServices, setUserServices] = useState<any[]>([]);
+  const [userReviews, setUserReviews] = useState<any[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Для режима фрилансера используем данные первого фрилансера
-  const freelancerData = mockUsers[0];
-  const services = getServicesByFreelancer(freelancerData.id);
-  const reviews = getReviewsByFreelancer(freelancerData.id);
-  const monthlyEarnings = 125000;
-  const activeProjects = 3;
-  const completedThisMonth = 8;
+
+  // 2. Функция загрузки данных с фоллбэком на моки
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      const API_URL = import.meta.env.VITE_API_URL ;
+      const token = localStorage.getItem("token"); // Берем токен, сохраненный при логине
+
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      };
+
+      // Профиль пользователя (/api/v1/users/me)
+      try {
+        const res = await fetch(`${API_URL}/api/v1/users/me`, { headers });
+        if (!res.ok) throw new Error("API User Error");
+        const json = await res.json();
+        setUserData(json.data);
+      } catch (err) {
+        console.warn("Фоллбэк профиля: сервер недоступен, используем моки");
+        setUserData(getCurrentUser());
+      }
+
+      // Сделки пользователя (/api/v1/users/me/deals)
+      try {
+        const res = await fetch(`${API_URL}/api/v1/users/me/deals`, { headers });
+        if (!res.ok) throw new Error("API Deals Error");
+        const json = await res.json();
+        setUserDeals(json.data.items);
+      } catch (err) {
+        console.warn("Фоллбэк сделок: сервер недоступен, используем моки");
+        const mockUser = getCurrentUser();
+        setUserDeals(mockDeals.filter((deal) => deal.clientId === mockUser.id));
+      }
+
+      // Услуги пользователя (/api/v1/users/me/services)
+      try {
+        const res = await fetch(`${API_URL}/api/v1/users/me/services`, { headers });
+        if (!res.ok) throw new Error("API Services Error");
+        const json = await res.json();
+        setUserServices(json.data.items);
+      } catch (err) {
+        console.warn("Фоллбэк услуг: сервер недоступен, используем моки");
+        setUserServices(getServicesByFreelancer(mockUsers[0].id));
+      }
+
+      // Отзывы о пользователе (/api/v1/users/me/reviews?role=freelancer)
+      try {
+        // Добавляем параметр ?role=freelancer (согласно твоей OpenAPI доке)
+        const res = await fetch(`${API_URL}/api/v1/users/me/reviews?role=freelancer`, { headers });
+        if (!res.ok) throw new Error("API Reviews Error");
+        const json = await res.json();
+        setUserReviews(json.data.items);
+      } catch (err) {
+        console.warn("Фоллбэк отзывов: сервер недоступен, используем моки");
+        setUserReviews(getReviewsByFreelancer(mockUsers[0].id));
+      }
+
+   
+
+      setIsLoading(false);
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Если данные еще грузятся, показываем скелетон или текст загрузки
+  if (isLoading || !userData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-xl text-blue-600 animate-pulse">Загрузка данных дашборда...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -86,144 +155,51 @@ export function UnifiedDashboard() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
                 <div>
                   <h1 className="text-3xl font-bold mb-2 text-blue-900">
-                    Добро пожаловать, {currentUser.name}!
+                    Добро пожаловать, {userData.name}!
                   </h1>
                   <p className="text-blue-700">Найдите идеального исполнителя для вашей задачи</p>
                 </div>
-
               </div>
 
-              {/* Stats Cards
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <Card className="border-blue-200 bg-white">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-blue-600 font-medium">Активных проектов</p>
-                        <p className="text-3xl font-bold text-blue-900">
-                          {userDeals.filter((d) => d.status === "in-progress").length}
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Briefcase className="w-6 h-6 text-blue-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-blue-200 bg-white">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-green-600 font-medium">Завершено</p>
-                        <p className="text-3xl font-bold text-green-900">
-                          {userDeals.filter((d) => d.status === "completed").length}
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-blue-200 bg-white">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-indigo-600 font-medium">Новых сообщений</p>
-                        <p className="text-3xl font-bold text-indigo-900">
-                          {userMessages.filter((m) => !m.read && m.toId === currentUser.id).length}
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <MessageSquare className="w-6 h-6 text-indigo-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-blue-200 bg-white">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-orange-600 font-medium">Ожидают оплаты</p>
-                        <p className="text-3xl font-bold text-orange-900">
-                          {userDeals.filter((d) => d.status === "pending").length}
-                        </p>
-                      </div>
-                      <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                        <Clock className="w-6 h-6 text-orange-600" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div> */}
-
-              {/* Main Content */}
               <Tabs defaultValue="projects" className="mb-6">
                 <TabsList className="bg-white border-blue-200">
                   <TabsTrigger value="projects" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900">
                     Мои заказы
                   </TabsTrigger>
-                  {/* <TabsTrigger value="messages" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900">
-                    Сообщения
-                  </TabsTrigger>
-                  <TabsTrigger value="favorites" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-900">
-                    Избранное
-                  </TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="projects" className="space-y-4">
                   {userDeals.map((deal) => {
-                    const freelancer = getUserById(deal.freelancerId);
+                    // Учитываем разницу полей: API возвращает executor.display_name, а моки freelancerId
+                    const freelancerName = deal.executor?.display_name || getUserById(deal.freelancerId)?.name || "Неизвестно";
+                    
                     return (
                       <Card key={deal.id} className="border-blue-200 bg-white hover:shadow-lg transition-shadow">
                         <CardContent className="pt-6">
                           <div className="flex flex-col md:flex-row gap-4 justify-between">
                             <div className="flex gap-4">
                               <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                                {freelancer?.name[0]}
+                                {freelancerName[0]}
                               </div>
                               <div>
                                 <h3 className="font-semibold text-lg mb-1 text-blue-900">
-                                  Проект с {freelancer?.name}
+                                  {deal.service?.title || `Проект с ${freelancerName}`}
                                 </h3>
                                 <p className="text-gray-600 text-sm mb-2">
-                                  Начат{" "}
-                                  {new Date(deal.createdAt).toLocaleDateString("ru-RU")}
-                                </p>
-                                <p className="text-gray-600 text-sm mb-2">
-                                  Заказчик {freelancer?.name}
-                                  
+                                  Начат {new Date(deal.created_at || deal.createdAt).toLocaleDateString("ru-RU")}
                                 </p>
                                 <Badge
-                                  variant={
-                                    deal.status === "completed"
-                                      ? "default"
-                                      : deal.status === "in-progress"
-                                        ? "secondary"
-                                        : "outline"
-                                  }
-                                  className={deal.status === "completed" ? "bg-green-600" : deal.status === "in-progress" ? "bg-blue-600" : ""}
+                                  variant={deal.status === "completed" ? "default" : deal.status === "in_progress" || deal.status === "in-progress" ? "secondary" : "outline"}
+                                  className={deal.status === "completed" ? "bg-green-600" : "bg-blue-600"}
                                 >
-                                  {deal.status === "completed"
-                                    ? "Завершен"
-                                    : deal.status === "in-progress"
-                                      ? "В работе"
-                                      : "Ожидает"}
+                                  {deal.status === "completed" ? "Завершен" : "В работе"}
                                 </Badge>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-2">
                               <div className="text-2xl font-bold text-blue-900">
-                                {deal.amount.toLocaleString()} ₽
-                              </div>
-                              <div className="flex gap-2">
-
-                                {deal.status === "completed" && (
-                                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">Оставить отзыв</Button>
-                                )}
+                                {/* Учитываем разницу полей API (payment) и Моков (amount) */}
+                                {(deal.payment || deal.amount || 0).toLocaleString()} ₽
                               </div>
                             </div>
                           </div>
@@ -239,71 +215,12 @@ export function UnifiedDashboard() {
                         <h3 className="text-xl font-semibold mb-2 text-blue-900">
                           У вас пока нет проектов
                         </h3>
-                        <p className="text-blue-700 mb-4">
-                          Найдите исполнителя для вашей задачи
-                        </p>
                         <Button className="bg-blue-600 hover:bg-blue-700" asChild>
                           <Link to="/search">Найти фрилансера</Link>
                         </Button>
                       </CardContent>
                     </Card>
                   )}
-                </TabsContent>
-
-                <TabsContent value="messages" className="space-y-4">
-                  {userMessages.slice(0, 5).map((message) => {
-                    const isFromMe = message.fromId === currentUser.id;
-                    const otherPerson = isFromMe ? message.toName : message.fromName;
-                    return (
-                      <Card key={message.id} className="border-blue-200 bg-white hover:shadow-lg transition-shadow">
-                        <CardContent className="pt-6">
-                          <div className="flex gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                              {otherPerson[0]}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-semibold text-blue-900">{otherPerson}</h3>
-                                <span className="text-sm text-gray-600">
-                                  {new Date(message.timestamp).toLocaleTimeString(
-                                    "ru-RU",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </span>
-                              </div>
-                              <p className="text-gray-700 line-clamp-2">
-                                {message.content}
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-
-                  <Button variant="outline" className="w-full border-blue-300 text-blue-700 hover:bg-blue-50" asChild>
-                    <Link to="/messages">Все сообщения</Link>
-                  </Button>
-                </TabsContent>
-
-                <TabsContent value="favorites">
-                  <Card className="border-blue-200 bg-white">
-                    <CardContent className="pt-6 text-center py-12">
-                      <Star className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2 text-blue-900">
-                        Список избранного пуст
-                      </h3>
-                      <p className="text-blue-700 mb-4">
-                        Добавляйте понравившихся исполнителей в избранное
-                      </p>
-                      <Button className="bg-blue-600 hover:bg-blue-700" asChild>
-                        <Link to="/search">Найти фрилансера</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
                 </TabsContent>
               </Tabs>
             </>
@@ -315,7 +232,7 @@ export function UnifiedDashboard() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
                 <div>
                   <h1 className="text-3xl font-bold mb-2 text-purple-900">
-                    Добро пожаловать, {currentUser.name}!
+                    Добро пожаловать, {userData.name}!
                   </h1>
                   <p className="text-purple-700">Развивайте свой бизнес и находите новых клиентов</p>
                 </div>
@@ -326,47 +243,37 @@ export function UnifiedDashboard() {
                 <CardHeader className="border-b border-purple-100">
                   <CardTitle className="flex items-center justify-between text-purple-900">
                     <span>Мой профиль</span>
-                    <Button variant="outline" size="sm" className="border-purple-300 text-purple-700 hover:bg-purple-50" asChild>
-                      <Link to={`/freelancer/${freelancerData.id}`}>
-                        Посмотреть публичный профиль
-                      </Link>
-                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white text-3xl font-bold flex-shrink-0">
-                      {freelancerData.name[0]}
+                      {userData.name[0]}
                     </div>
                     <div className="flex-1">
                       <h3 className="text-xl font-semibold mb-2 text-purple-900">
-                        {freelancerData.name}
+                        {userData.name}
                       </h3>
-                      <p className="text-gray-700 mb-3">{freelancerData.bio}</p>
+                      <p className="text-gray-700 mb-3">{userData.bio || "Описание профиля не заполнено"}</p>
                       <div className="flex gap-4 text-sm text-gray-600">
                         <div>
                           <Star className="w-4 h-4 inline mr-1 fill-amber-400 text-amber-400" />
-                          {freelancerData.rating} ({freelancerData.reviewCount}{" "}
-                          отзывов)
+                          {userData.avg_rating || userData.rating || 0} ({userData.reviews_count || userData.reviewCount || 0} отзывов)
                         </div>
-                        <div>
-                          <Calendar className="w-4 h-4 inline mr-1" />
-                          зарегистрирован {freelancerData.joinedDate}
-                        </div>
-                        <div>
-                          <MapPin className="w-4 h-4 inline mr-1" />
-                          {freelancerData.location}
-                        </div>
-                        <div>
-                          <MailIcon className="w-4 h-4 inline mr-1" />
-                          {freelancerData.email}
-                        </div>
+                        {userData.city && (
+                          <div>
+                            <MapPin className="w-4 h-4 inline mr-1" />
+                            {userData.city || userData.location}
+                          </div>
+                        )}
+                        {userData.email && (
+                          <div>
+                            <MailIcon className="w-4 h-4 inline mr-1" />
+                            {userData.email}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    {/* <Button className="bg-purple-600 hover:bg-purple-700">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Редактировать
-                    </Button> */}
                   </div>
                 </CardContent>
               </Card>
@@ -377,19 +284,13 @@ export function UnifiedDashboard() {
                   <TabsTrigger value="services" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900">
                     Мои услуги
                   </TabsTrigger>
-                  <TabsTrigger value="orders" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900">
-                    Заказы
-                  </TabsTrigger>
                   <TabsTrigger value="reviews" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900">
                     Отзывы
                   </TabsTrigger>
-                  {/* <TabsTrigger value="analytics" className="data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900">
-                    Аналитика
-                  </TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="services" className="space-y-4">
-                  {services.map((service) => (
+                  {userServices.map((service) => (
                     <Card key={service.id} className="border-purple-200 bg-white hover:shadow-lg transition-shadow">
                       <CardContent className="pt-6">
                         <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -400,21 +301,14 @@ export function UnifiedDashboard() {
                             <p className="text-gray-600 mb-3 line-clamp-2">
                               {service.description}
                             </p>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {service.tags?.map((tag) => (
-                                <Badge key={tag} variant="outline" className="border-purple-300 text-purple-700">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
                             <div className="flex gap-4 text-sm text-gray-600">
                               <div>
                                 <span className="font-semibold text-purple-900">
-                                  {service.price.toLocaleString()} ₽
+                                  {service.price ? `${service.price.toLocaleString()} ₽` : "Договорная"}
                                 </span>
                               </div>
-                              <div>Срок: {service.deliveryTime} дней</div>
-
+                              {/* Обработка данных API (execution_period_days) и Моков (deliveryTime) */}
+                              <div>Срок: {service.execution_period_days || service.deliveryTime} дней</div>
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">
@@ -424,149 +318,58 @@ export function UnifiedDashboard() {
                                 Редактировать
                               </Link>
                             </Button>
-
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
-
                   <Button variant="outline" className="w-full border-purple-300 text-purple-700 hover:bg-purple-50" asChild>
                     <Link to="/service/create">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Добавить новую услугу
+                      <Plus className="w-4 h-4 mr-2" /> Добавить новую услугу
                     </Link>
                   </Button>
                 </TabsContent>
 
-                <TabsContent value="orders" className="space-y-4">
-                  <Card className="border-purple-200 bg-white">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col gap-4">
-                        {[
-                          {
-                            id: 1,
-                            client: "Ольга Соколова",
-                            service: "Разработка логотипа",
-                            status: "in-progress",
-                            deadline: "2026-03-10",
-                            amount: 15000,
-                          },
-                          {
-                            id: 2,
-                            client: "Игорь Белов",
-                            service: "UI/UX дизайн",
-                            status: "pending",
-                            deadline: "2026-03-15",
-                            amount: 45000,
-                          },
-                        ].map((order) => (
-                          <div
-                            key={order.id}
-                            className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center p-4 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
-                          >
-                            <div className="flex gap-4">
-                              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                                {order.client[0]}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-purple-900">{order.service}</h4>
-                                <p className="text-sm text-gray-600">
-                                  Клиент: {order.client}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  Дедлайн: {new Date(order.deadline).toLocaleDateString("ru-RU")}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                              <Badge
-                                className={order.status === "in-progress" ? "bg-purple-600" : "bg-pink-600"}
-                              >
-                                {order.status === "in-progress" ? "В работе" : "Новый"}
-                              </Badge>
-                              <div className="font-bold text-purple-900">
-                                {order.amount.toLocaleString()} ₽
-                              </div>
-                              {/* <Button size="sm" className="bg-purple-600 hover:bg-purple-700">Открыть</Button> */}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
                 <TabsContent value="reviews" className="space-y-4">
-                  {reviews.map((review) => (
-                    <Card key={review.id} className="border-purple-200 bg-white">
-                      <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                            {review.clientName[0]}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <div className="font-semibold text-purple-900">{review.clientName}</div>
-                                <div className="text-sm text-gray-600">
-                                  {new Date(review.date).toLocaleDateString("ru-RU")}
+                  {userReviews.map((review) => {
+                    const authorName = review.author?.display_name || review.clientName || "Аноним";
+                    return (
+                      <Card key={review.id} className="border-purple-200 bg-white">
+                        <CardContent className="pt-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                              {authorName[0]}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <div className="font-semibold text-purple-900">{authorName}</div>
+                                  <div className="text-sm text-gray-600">
+                                    {new Date(review.created_at || review.date).toLocaleDateString("ru-RU")}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-5 h-5 ${i < review.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`}
+                                    />
+                                  ))}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-5 h-5 ${i < review.rating
-                                      ? "fill-amber-400 text-amber-400"
-                                      : "text-gray-300"
-                                      }`}
-                                  />
-                                ))}
-                              </div>
+                              <p className="text-gray-700">{review.comment}</p>
                             </div>
-                            <p className="text-gray-700">{review.comment}</p>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </TabsContent>
-
-                <TabsContent value="analytics">
-                  <Card className="border-purple-200 bg-white">
-                    <CardHeader>
-                      <CardTitle className="text-purple-900">Статистика за месяц</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <div className="text-3xl font-bold text-purple-600">256</div>
-                          <div className="text-sm text-purple-800">Просмотров профиля</div>
-                        </div>
-                        <div className="text-center p-4 bg-pink-50 rounded-lg border border-pink-200">
-                          <div className="text-3xl font-bold text-pink-600">42</div>
-                          <div className="text-sm text-pink-800">Новых запросов</div>
-                        </div>
-                        <div className="text-center p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                          <div className="text-3xl font-bold text-indigo-600">18</div>
-                          <div className="text-sm text-indigo-800">Заказов</div>
-                        </div>
-                        <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
-                          <div className="text-3xl font-bold text-amber-600">95%</div>
-                          <div className="text-sm text-amber-800">Процент завершения</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </TabsContent>
               </Tabs>
             </>
           )}
         </div>
       </div>
-
-
     </div>
   );
 }

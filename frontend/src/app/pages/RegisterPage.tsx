@@ -81,7 +81,7 @@ export function RegisterPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
-              Регистрация в FreelanceHub
+              Регистрация в FreelanSearch
             </CardTitle>
             <p className="text-center text-gray-600 mt-2">
               Один аккаунт для заказа и предложения услуг
