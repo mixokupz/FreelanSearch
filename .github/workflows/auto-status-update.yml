@@ -1,0 +1,64 @@
+name: Auto Status Update
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+    branches:
+      - dev                     # only for dev PR
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  # Branch feature/* = In progress 
+  branch-to-in-progress:
+    if: startsWith(github.ref_name, 'feature/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get issue from branch
+        id: issue
+        uses: ./.github/actions/get-issue
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          branch-name: ${{ github.ref_name }}
+
+      - name: Set status -> In progress
+        if: steps.issue.outputs.issue-number != ''
+        uses: leonsteinhaeuser/project-beta-automations@v2.2.1
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          project_id: 2
+          resource_node_id: ${{ steps.issue.outputs.issue-node-id }}
+          status_value: "In progress"
+
+  # PR -> In review
+  pr-to-in-review:
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get issue from PR
+        id: issue
+        uses: ./.github/actions/get-issue
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-title: ${{ github.event.pull_request.title }}
+          pr-body: ${{ github.event.pull_request.body }}
+          branch-name: ${{ github.event.pull_request.head.ref }}
+
+      - name: Set status -> In review
+        if: steps.issue.outputs.issue-number != ''
+        uses: leonsteinhaeuser/project-beta-automations@v2.2.1
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          project_id: 2 
+          resource_node_id: ${{ steps.issue.outputs.issue-node-id }}
+          status_value: "In review"           # ← точное имя статуса
