@@ -34,7 +34,7 @@ jobs:
         uses: leonsteinhaeuser/project-beta-automations@v2.2.1
         with:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
-          user: mixokupz
+          organization: mixokupz
           project_id: 2
           resource_node_id: ${{ steps.issue.outputs.issue-node-id }}
           status_value: "In progress"
@@ -60,7 +60,7 @@ jobs:
         uses: leonsteinhaeuser/project-beta-automations@v2.2.1
         with:
           gh_token: ${{ secrets.GITHUB_TOKEN }}
-          user: mixokupz
+          organization: mixokupz
           project_id: 2 
           resource_node_id: ${{ steps.issue.outputs.issue-node-id }}
           status_value: "In review"           # ← точное имя статуса
