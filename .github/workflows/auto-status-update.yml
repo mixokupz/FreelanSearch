@@ -33,7 +33,7 @@ jobs:
         if: steps.issue.outputs.issue-number != ''
         uses: leonsteinhaeuser/project-beta-automations@v2.2.1
         with:
-          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_token: ${{ secrets.PROJECT_PAT }}
           user: mixokupz
           project_id: 2
           resource_node_id: ${{ steps.issue.outputs.issue-node-id }}
@@ -59,7 +59,7 @@ jobs:
         if: steps.issue.outputs.issue-number != ''
         uses: leonsteinhaeuser/project-beta-automations@v2.2.1
         with:
-          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_token: ${{ secrets.PROJECT_PAT }}
           user: mixokupz
           project_id: 2 
           resource_node_id: ${{ steps.issue.outputs.issue-node-id }}
