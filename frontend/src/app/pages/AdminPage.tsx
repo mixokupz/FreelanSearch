@@ -355,7 +355,7 @@ export function AdminPage() {
         </div>
       </div>
 
-      <Footer />
+  
     </div>
   );
 }

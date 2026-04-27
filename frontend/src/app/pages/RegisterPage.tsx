@@ -81,7 +81,7 @@ export function RegisterPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
-              Регистрация в FreelanceHub
+              Регистрация в FreelanSearch
             </CardTitle>
             <p className="text-center text-gray-600 mt-2">
               Один аккаунт для заказа и предложения услуг
@@ -140,7 +140,7 @@ export function RegisterPage() {
                 />
               </div>
 
-              <div className="flex items-start gap-2 text-sm">
+              {/* <div className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-1" required disabled={isLoading} />
                 <span className="text-gray-600">
                   Я согласен с{" "}
@@ -152,7 +152,7 @@ export function RegisterPage() {
                     политикой конфиденциальности
                   </a>
                 </span>
-              </div>
+              </div> */}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Регистрация..." : "Зарегистрироваться"}
@@ -169,7 +169,6 @@ export function RegisterPage() {
         </Card>
       </div>
 
-      <Footer />
     </div>
   );
 }

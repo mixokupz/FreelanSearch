@@ -1,9 +1,12 @@
 package ru.nsu.sdp.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import ru.nsu.sdp.dto.*;
+import ru.nsu.sdp.service.ServiceCatalogService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,7 +14,19 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/services")
+@RequiredArgsConstructor
 public class ServiceController {
+
+    private final ServiceCatalogService serviceCatalogService;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<ListResponse<ServiceAdView>>> getServiceAnnouncements(
+            @RequestParam MultiValueMap<String, String> queryParams,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        ApiResponse<ListResponse<ServiceAdView>> response =
+                serviceCatalogService.getAnnouncements(authorizationHeader, queryParams);
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
