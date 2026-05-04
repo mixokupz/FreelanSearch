@@ -53,11 +53,21 @@ export function RegisterPage() {
 
       const data = await response.json();
 
-      // Обрабатываем ошибки (например, 409 Конфликт - email уже занят)
-      if (!response.ok) {
-        toast.error(data.message);
+      if (response.status == 409) {
+        toast.error("Пользователь с таким email уже существует");
+      }
+      else if (response.status == 400) {
+        toast.error("ошибка валидации (короткий пароль, но это не точно)");
         return;
       }
+
+
+      // Обрабатываем ошибки (например, 409 Конфликт - email уже занят)
+      else if (!response.ok) {
+        toast.error(response.status + " undefined error");
+        return;
+      }
+
 
       // Успех! Сервер вернул 201 и токен
       localStorage.setItem("token", data.data.token);
