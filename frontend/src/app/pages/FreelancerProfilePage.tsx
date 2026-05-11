@@ -1,6 +1,6 @@
-import { Link, useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
+import { useEffect, useState } from "react";
 import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -13,18 +13,159 @@ import {
   Award,
   MessageSquare,
   Globe,
+  MailIcon,
 } from "lucide-react";
+import type { CatalogFreelancer } from "../types";
 import {
   getUserById,
   getServicesByFreelancer,
   getReviewsByFreelancer,
 } from "../data/mockData";
 
+type ProfileService = {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  deliveryTime: number;
+  tags?: string[];
+};
+
+type ProfileReview = {
+  id: string;
+  clientName: string;
+  rating: number;
+  comment: string;
+  date: string;
+};
+
+type ApiServiceResponse = {
+  id: number;
+  title: string;
+  description: string;
+  execution_period_days: number;
+  price: number | null;
+  tags?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+};
+
+type ApiReviewResponse = {
+  id: number;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  author?: {
+    id: number;
+    display_name: string;
+    avatar_url: string | null;
+  };
+};
+
+function mapApiService(service: ApiServiceResponse): ProfileService {
+  return {
+    id: String(service.id),
+    title: service.title,
+    description: service.description,
+    price: service.price ?? 0,
+    deliveryTime: service.execution_period_days,
+    tags: service.tags?.map((tag) => tag.name) ?? [],
+  };
+}
+
+function mapApiReview(review: ApiReviewResponse): ProfileReview {
+  return {
+    id: String(review.id),
+    clientName: review.author?.display_name || "Пользователь",
+    rating: review.rating,
+    comment: review.comment || "Без комментария",
+    date: review.created_at,
+  };
+}
+
 export function FreelancerProfilePage() {
   const { id } = useParams();
-  const freelancer = getUserById(id || "");
-  const services = getServicesByFreelancer(id || "");
-  const reviews = getReviewsByFreelancer(id || "");
+  const location = useLocation();
+  const freelancerFromState = (location.state as { freelancer?: CatalogFreelancer } | null)?.freelancer;
+  const freelancerFromMock = getUserById(id || "");
+  const freelancer = freelancerFromState ?? freelancerFromMock;
+  const [services, setServices] = useState<ProfileService[]>([]);
+  const [reviews, setReviews] = useState<ProfileReview[]>([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(true);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+
+  useEffect(() => {
+    const userId = id || "";
+    if (!userId) {
+      setIsLoadingServices(false);
+      setIsLoadingReviews(false);
+      return;
+    }
+
+    const API_URL = import.meta.env.VITE_API_URL;
+
+    const fetchServices = async () => {
+      setIsLoadingServices(true);
+
+      try {
+        const response = await fetch(`${API_URL}/api/v1/users/${userId}/services`);
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить услуги пользователя");
+        }
+
+        const json = await response.json();
+        const items = (json.data?.items ?? []) as ApiServiceResponse[];
+        setServices(items.map(mapApiService));
+      } catch (error) {
+        console.warn("Фоллбэк услуг профиля: сервер недоступен, используем моки", error);
+        setServices(
+          getServicesByFreelancer(userId).map((service) => ({
+            id: service.id,
+            title: service.title,
+            description: service.description,
+            price: service.price,
+            deliveryTime: service.deliveryTime,
+            tags: service.tags,
+          }))
+        );
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+
+    const fetchReviews = async () => {
+      setIsLoadingReviews(true);
+
+      try {
+        const response = await fetch(`${API_URL}/api/v1/users/${userId}/reviews?role=freelancer`);
+        if (!response.ok) {
+          throw new Error("Не удалось загрузить отзывы пользователя");
+        }
+
+        const json = await response.json();
+        const items = (json.data?.items ?? []) as ApiReviewResponse[];
+        setReviews(items.map(mapApiReview));
+      } catch (error) {
+        console.warn("Фоллбэк отзывов профиля: сервер недоступен, используем моки", error);
+        setReviews(
+          getReviewsByFreelancer(userId).map((review) => ({
+            id: review.id,
+            clientName: review.clientName,
+            rating: review.rating,
+            comment: review.comment,
+            date: review.date,
+          }))
+        );
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+
+    fetchServices();
+    fetchReviews();
+  }, [id]);
 
   if (!freelancer) {
     return (
@@ -33,7 +174,6 @@ export function FreelancerProfilePage() {
         <div className="flex-1 flex items-center justify-center">
           <p>Фрилансер не найден</p>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -58,42 +198,58 @@ export function FreelancerProfilePage() {
                   <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {freelancer.location}
+                      {freelancer.location || "Город не указан"}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      На платформе с{" "}
-                      {new Date(freelancer.joinedDate || "").toLocaleDateString(
-                        "ru-RU",
-                        { month: "long", year: "numeric" }
+                    {freelancer.joinedDate && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        На платформе с{" "}
+                        {new Date(freelancer.joinedDate).toLocaleDateString("ru-RU", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </div>
+                    )}
+                    {"languages" in freelancer &&
+                      Array.isArray(freelancer.languages) &&
+                      freelancer.languages.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Globe className="w-4 h-4" />
+                          {freelancer.languages.join(", ")}
+                        </div>
                       )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Globe className="w-4 h-4" />
-                      {freelancer.languages?.join(", ")}
-                    </div>
+                    {freelancer.email && (
+                      <div className="flex items-center gap-1">
+                        <MailIcon className="w-4 h-4" />
+                        {freelancer.email}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-6 mb-4">
                     <div className="flex items-center gap-2">
                       <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                       <span className="text-xl font-semibold">
-                        {freelancer.rating}
+                        {freelancer.rating || 0}
                       </span>
                       <span className="text-gray-600">
-                        ({freelancer.reviewCount} отзывов)
+                        ({freelancer.reviewCount || 0} отзывов)
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="w-5 h-5" />
-                      <span className="font-semibold">
-                        {freelancer.completedJobs}
-                      </span>
-                      <span className="text-gray-600">выполнено</span>
-                    </div>
+                    {"completedJobs" in freelancer && typeof freelancer.completedJobs === "number" && (
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="w-5 h-5" />
+                        <span className="font-semibold">
+                          {freelancer.completedJobs}
+                        </span>
+                        <span className="text-gray-600">выполнено</span>
+                      </div>
+                    )}
                   </div>
 
-                  <p className="text-gray-700 mb-4">{freelancer.bio}</p>
+                  <p className="text-gray-700 mb-4">
+                    {freelancer.bio || "Пользователь пока не добавил описание"}
+                  </p>
 
                   <div className="flex flex-wrap gap-2 mb-6">
                     {freelancer.skills?.map((skill) => (
@@ -103,17 +259,7 @@ export function FreelancerProfilePage() {
                     ))}
                   </div>
 
-                  <div className="flex gap-3">
-                    <Button size="lg" asChild>
-                      <Link to="/messages">
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Связаться
-                      </Link>
-                    </Button>
-                    <Button size="lg" variant="outline">
-                      {freelancer.hourlyRate?.toLocaleString()} ₽/час
-                    </Button>
-                  </div>
+
                 </div>
               </div>
             </CardContent>
@@ -121,14 +267,20 @@ export function FreelancerProfilePage() {
 
           {/* Tabs */}
           <Tabs defaultValue="services" className="mb-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="services">Услуги</TabsTrigger>
               <TabsTrigger value="reviews">Отзывы</TabsTrigger>
-              <TabsTrigger value="portfolio">Портфолио</TabsTrigger>
+              {/* <TabsTrigger value="portfolio">Портфолио</TabsTrigger> */}
             </TabsList>
 
             <TabsContent value="services" className="space-y-4">
-              {services.length > 0 ? (
+              {isLoadingServices ? (
+                <Card>
+                  <CardContent className="pt-6 text-center py-12 text-gray-600">
+                    Загружаем услуги...
+                  </CardContent>
+                </Card>
+              ) : services.length > 0 ? (
                 services.map((service) => (
                   <Card key={service.id}>
                     <CardContent className="pt-6">
@@ -177,7 +329,13 @@ export function FreelancerProfilePage() {
             </TabsContent>
 
             <TabsContent value="reviews" className="space-y-4">
-              {reviews.length > 0 ? (
+              {isLoadingReviews ? (
+                <Card>
+                  <CardContent className="pt-6 text-center py-12 text-gray-600">
+                    Загружаем отзывы...
+                  </CardContent>
+                </Card>
+              ) : reviews.length > 0 ? (
                 reviews.map((review) => (
                   <Card key={review.id}>
                     <CardContent className="pt-6">
@@ -204,11 +362,10 @@ export function FreelancerProfilePage() {
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`w-5 h-5 ${
-                                    i < review.rating
+                                  className={`w-5 h-5 ${i < review.rating
                                       ? "fill-yellow-400 text-yellow-400"
                                       : "text-gray-300"
-                                  }`}
+                                    }`}
                                 />
                               ))}
                             </div>
@@ -227,7 +384,7 @@ export function FreelancerProfilePage() {
                 </Card>
               )}
             </TabsContent>
-
+{/* 
             <TabsContent value="portfolio" className="space-y-4">
               <Card>
                 <CardContent className="pt-6">
@@ -243,12 +400,10 @@ export function FreelancerProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

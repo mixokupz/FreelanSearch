@@ -37,7 +37,7 @@ export function LandingPage() {
               Найдите идеального фрилансера для вашего проекта
             </h1>
             <p className="text-xl mb-8 text-blue-100">
-              Тысячи проверенных специалистов готовы помочь вам реализовать любую
+              Проверенные специалисты готовы помочь вам реализовать любую
               задачу
             </p>
 
@@ -71,52 +71,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl text-center mb-12">Почему выбирают нас</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl mb-2">Проверенные специалисты</h3>
-                <p className="text-gray-600">
-                  Все фрилансеры проходят верификацию. Смотрите портфолио, отзывы
-                  и рейтинги перед выбором
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-8 h-8 text-green-600" />
-                </div>
-                <h3 className="text-xl mb-2">Безопасные сделки</h3>
-                <p className="text-gray-600">
-                  Оплата через платформу с гарантией возврата средств. Деньги
-                  переводятся исполнителю только после завершения работы
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="text-xl mb-2">Удобное общение</h3>
-                <p className="text-gray-600">
-                  Встроенный мессенджер для быстрой связи с исполнителями. Вся
-                  переписка и файлы в одном месте
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+  
 
       {/* Categories Section */}
       <section className="py-20">
@@ -138,9 +93,7 @@ export function LandingPage() {
                   <CardContent className="pt-6 text-center">
                     <div className="text-4xl mb-2">{category.icon}</div>
                     <h3 className="font-semibold mb-1">{category.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      {category.count} специалистов
-                    </p>
+                    
                   </CardContent>
                 </Card>
               </Link>
@@ -149,7 +102,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Stats Section
       <section className="py-20 bg-blue-600 text-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -171,10 +124,10 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* How it Works */}
-      <section className="py-20">
+      <section className="py-20 bg-blue-600 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl text-center mb-12">Как это работает</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -183,7 +136,7 @@ export function LandingPage() {
                 1
               </div>
               <h3 className="font-semibold mb-2">Опишите задачу</h3>
-              <p className="text-gray-600 text-sm">
+              <p className=" mb-2">
                 Расскажите, что вам нужно, укажите бюджет и сроки
               </p>
             </div>
@@ -192,7 +145,7 @@ export function LandingPage() {
                 2
               </div>
               <h3 className="font-semibold mb-2">Выберите исполнителя</h3>
-              <p className="text-gray-600 text-sm">
+              <p className=" mb-2">
                 Изучите профили, портфолио и отзывы фрилансеров
               </p>
             </div>
@@ -201,7 +154,7 @@ export function LandingPage() {
                 3
               </div>
               <h3 className="font-semibold mb-2">Работайте вместе</h3>
-              <p className="text-gray-600 text-sm">
+              <p className=" mb-2">
                 Обсуждайте детали, отслеживайте прогресс в личном кабинете
               </p>
             </div>
@@ -210,7 +163,7 @@ export function LandingPage() {
                 4
               </div>
               <h3 className="font-semibold mb-2">Получите результат</h3>
-              <p className="text-gray-600 text-sm">
+              <p className=" mb-2">
                 Проверьте работу, оставьте отзыв и оплатите
               </p>
             </div>
@@ -236,7 +189,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <Footer />
+    
     </div>
   );
 }

@@ -234,7 +234,7 @@ export function CreateServicePage() {
         </div>
       </div>
 
-      <Footer />
+  
     </div>
   );
 }

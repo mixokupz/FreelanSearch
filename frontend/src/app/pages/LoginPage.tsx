@@ -65,7 +65,7 @@ export function LoginPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
-              Вход в FreelanceHub
+              Вход в FreelanSearch
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -96,7 +96,7 @@ export function LoginPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between text-sm">
+              {/* <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" disabled={isLoading} />
                   <span>Запомнить меня</span>
@@ -104,7 +104,7 @@ export function LoginPage() {
                 <a href="#" className="text-blue-600 hover:underline">
                   Забыли пароль?
                 </a>
-              </div>
+              </div> */}
 
               {/* Умная кнопка, которая меняет текст и блокируется при загрузке */}
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -125,7 +125,7 @@ export function LoginPage() {
         </Card>
       </div>
 
-      <Footer />
+    
     </div>
   );
 }

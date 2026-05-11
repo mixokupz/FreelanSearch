@@ -53,21 +53,11 @@ export function RegisterPage() {
 
       const data = await response.json();
 
-      if (response.status == 409) {
-        toast.error("Пользователь с таким email уже существует");
-      }
-      else if (response.status == 400) {
-        toast.error("ошибка валидации (короткий пароль, но это не точно)");
-        return;
-      }
-
-
       // Обрабатываем ошибки (например, 409 Конфликт - email уже занят)
-      else if (!response.ok) {
-        toast.error(response.status + " undefined error");
+      if (!response.ok) {
+        toast.error(data.message);
         return;
       }
-
 
       // Успех! Сервер вернул 201 и токен
       localStorage.setItem("token", data.data.token);
@@ -91,7 +81,7 @@ export function RegisterPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
-              Регистрация в FreelanceHub
+              Регистрация в FreelanSearch
             </CardTitle>
             <p className="text-center text-gray-600 mt-2">
               Один аккаунт для заказа и предложения услуг
@@ -150,7 +140,7 @@ export function RegisterPage() {
                 />
               </div>
 
-              <div className="flex items-start gap-2 text-sm">
+              {/* <div className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-1" required disabled={isLoading} />
                 <span className="text-gray-600">
                   Я согласен с{" "}
@@ -162,7 +152,7 @@ export function RegisterPage() {
                     политикой конфиденциальности
                   </a>
                 </span>
-              </div>
+              </div> */}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Регистрация..." : "Зарегистрироваться"}
@@ -179,7 +169,6 @@ export function RegisterPage() {
         </Card>
       </div>
 
-      <Footer />
     </div>
   );
 }
