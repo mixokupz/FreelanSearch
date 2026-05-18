@@ -1,0 +1,56 @@
+services:
+  db:
+    image: database:1.0.0
+    container_name: postgres-db
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d database"]
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=database
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=ThisIsASecretKeyForFreelanSearchPlatformMustBe256BitsLong!
+      - JWT_EXPIRATION_MS=86400000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  bff:
+    container_name: bff
+    build:
+      context: ./bff
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8081
+    depends_on:
+      - auth-service
+
+volumes:
+  postgres_data:
+    name: "postgres_data"
