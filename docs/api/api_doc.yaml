@@ -4,11 +4,14 @@ info:
   description: Интерактивная документация REST API для платформы взаимодействия фрилансеров и заказчиков.
   version: 1.0.0
 servers:
-  - url: https://api.yourfreelance.com
+  - url: http://localhost:8080
     description: Основной сервер
 
 paths:
 
+  # ==========================================
+  # AUTH
+  # ==========================================
   /api/v1/auth/login:
     post:
       summary: Вход в систему (Авторизация)
@@ -92,8 +95,165 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # ==========================================
+  # LISTINGS (New Endpoints)
+  # ==========================================
+  /api/v1/listings:
+    post:
+      summary: Создать новое объявление
+      description: Создает новое объявление об услуге. Заголовок Authorization опционален, но может использоваться для привязки к пользователю.
+      tags:
+        - Listings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateListingRequest'
+      responses:
+        '201':
+          description: Объявление успешно создано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ListingDetailsResponse'
+        '400':
+          description: Некорректный запрос / ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileErrorResponse'
 
+  /api/v1/listings/{id}:
+    get:
+      summary: Получить объявление по ID
+      description: Возвращает полную информацию об объявлении.
+      tags:
+        - Listings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор объявления
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ListingDetailsResponse'
+        '404':
+          description: Объявление не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileErrorResponse'
 
+    put:
+      summary: Обновить объявление
+      description: Обновляет существующее объявление по его ID.
+      tags:
+        - Listings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор объявления
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateListingRequest'
+      responses:
+        '200':
+          description: Объявление успешно обновлено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ListingDetailsResponse'
+        '400':
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileErrorResponse'
+        '404':
+          description: Объявление не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileErrorResponse'
+
+    delete:
+      summary: Удалить объявление
+      description: Удаляет объявление по его ID.
+      tags:
+        - Listings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор объявления
+      responses:
+        '200':
+          description: Объявление успешно удалено
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Объявление успешно удалено"
+        '404':
+          description: Объявление не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileErrorResponse'
+
+  # ==========================================
+  # USERS
+  # ==========================================
   /api/v1/users/me:
     get:
       summary: Получить полный профиль текущего пользователя
@@ -198,67 +358,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProfileErrorResponse'
-
   
   
-  /api/v1/users/me/services:
-    get:
-      summary: Получить список услуг текущего пользователя
-      operationId: getCurrentUserServices
-      tags:
-        - Services
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: object
-                    properties:
-                      items:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/UserServiceResponse'
-
-  /api/v1/users/{id}/services:
-    get:
-      summary: Получить список услуг конкретного пользователя (фрилансера)
-      operationId: getUserServicesByUserId
-      tags:
-        - Services
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Успешный ответ
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  data:
-                    type: object
-                    properties:
-                      items:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/UserServiceResponse'
-
   /api/v1/users/me/deals:
     get:
       summary: Получить список сделок текущего пользователя
@@ -296,7 +397,6 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/DealResponse'
-
 
   /api/v1/users/me/reviews:
     get:
@@ -397,6 +497,80 @@ components:
 
   schemas:
   
+    # ----------------------------------------
+    # LISTING SCHEMAS (New)
+    # ----------------------------------------
+    CreateListingRequest:
+      type: object
+      required:
+        - title
+        - description
+        - price
+        - priceType
+      properties:
+        title:
+          type: string
+          example: "Настройка роутера"
+        description:
+          type: string
+          example: "Помогу настроить Wi-Fi и роутер дома."
+        price:
+          type: number
+          format: decimal
+          example: 1500.00
+        priceType:
+          type: string
+          enum: [fixed, negotiable, free]
+          example: "fixed"
+
+    UpdateListingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Настройка роутера и Wi-Fi"
+        description:
+          type: string
+          example: "Помогу настроить роутер, Wi-Fi и сеть дома."
+        price:
+          type: number
+          format: decimal
+          example: 2000.00
+        priceType:
+          type: string
+          enum: [fixed, negotiable, free]
+          example: "fixed"
+        status:
+          type: string
+          enum: [pending, active, rejected, archived]
+          example: "active"
+
+    ListingDetailsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Настройка роутера"
+        description:
+          type: string
+          example: "Помогу настроить Wi-Fi и роутер дома."
+        price:
+          type: number
+          format: decimal
+          example: 1500.00
+        priceType:
+          type: string
+          example: "fixed"
+        status:
+          type: string
+          example: "active"
+
+    # ----------------------------------------
+    # PROFILE SCHEMAS
+    # ----------------------------------------
     OwnProfileResponse:
       type: object
       properties:
@@ -441,6 +615,7 @@ components:
           type: string
         display_name:
           type: string
+          format: uri
         avatar_url:
           type: string
           format: uri
@@ -487,104 +662,10 @@ components:
             message:
               type: string
 
-
-    UserProfileResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        email:
-          type: string
-          nullable: true
-        phone:
-          type: string
-          nullable: true
-        role:
-          type: string
-          enum: [user, admin, moderator]
-        is_blocked:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        name:
-          type: string
-        avatar_url:
-          type: string
-          nullable: true
-        bio:
-          type: string
-          nullable: true
-        city:
-          type: string
-          nullable: true
-        avg_rating:
-          type: number
-          format: decimal
-          minimum: 0
-          maximum: 5
-        reviews_count:
-          type: integer
-          minimum: 0
-        tags:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              name:
-                type: string
-              slug:
-                type: string
-
-    UserServiceResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        description:
-          type: string
-        execution_period_days:
-          type: integer
-        price:
-          type: number
-          format: decimal
-          nullable: true
-        price_type:
-          type: string
-          enum: [fixed, negotiable, free]
-        status:
-          type: string
-          enum: [pending, active, rejected, archived]
-        category:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            slug:
-              type: string
-        tags:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              name:
-                type: string
-              slug:
-                type: string
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+    # ----------------------------------------
+    # OTHER SCHEMAS
+    # ----------------------------------------
+  
 
     DealResponse:
       type: object
