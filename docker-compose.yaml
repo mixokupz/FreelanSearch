@@ -56,6 +56,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
+ 
+  listings-service:
+    container_name: listings-service
+    build:
+      context: ./listings-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=database
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=ThisIsASecretKeyForFreelanSearchPlatformMustBe256BitsLong!
+      - JWT_EXPIRATION_MS=86400000
+    depends_on:
+      db:
+        condition: service_healthy
 
   bff:
     container_name: bff
@@ -67,9 +86,11 @@ services:
     environment:
       - AUTH_SERVICE_URL=http://auth-service:8081
       - PROFILE_SERVICE_URL=http://profile-service:8082
+      - LISTINGS_SERVICE_URL=http://listings-service:8083
     depends_on:
       - auth-service
       - profile-service
+      - listings-service
 
 volumes:
   postgres_data:
