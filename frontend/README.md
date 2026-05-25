@@ -1,7 +1,4 @@
 
-  # Freelancer Search Website
-
-  This is a code bundle for Freelancer Search Website. The original project is available at https://www.figma.com/design/kGfLQ4oewEEJhccHSWXu0I/Freelancer-Search-Website.
 
   ## Running the code
 
@@ -9,3 +6,8 @@
 
   Run `npm run dev` to start the development server.
   
+  //TODO читать криптономикон 
+  //Лучше звоните Солу» (Better Call Saul, 2015-2022)
+  //true detective
+  //потерянная комната
+  //fallout

@@ -1,408 +1,164 @@
-import { useLocation, useParams } from "react-router";
-import { useEffect, useState } from "react";
-import { Header } from "../components/Header";
-import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import {
-  Star,
-  MapPin,
-  Calendar,
-  Briefcase,
-  Award,
-  MessageSquare,
-  Globe,
-  MailIcon,
-} from "lucide-react";
-import type { CatalogFreelancer } from "../types";
-import {
-  getUserById,
-  getServicesByFreelancer,
-  getReviewsByFreelancer,
-} from "../data/mockData";
+import { useParams, useNavigate } from 'react-router';
+import { ArrowLeft, Briefcase, Heart, Mail, Phone, Star } from 'lucide-react';
+import { fetchFreelancerProfile, formatDate } from '../lib/api';
+import { useAsyncData } from '../lib/useAsyncData';
 
-type ProfileService = {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  deliveryTime: number;
-  tags?: string[];
-};
-
-type ProfileReview = {
-  id: string;
-  clientName: string;
-  rating: number;
-  comment: string;
-  date: string;
-};
-
-type ApiServiceResponse = {
-  id: number;
-  title: string;
-  description: string;
-  execution_period_days: number;
-  price: number | null;
-  tags?: Array<{
-    id: number;
-    name: string;
-    slug: string;
-  }>;
-};
-
-type ApiReviewResponse = {
-  id: number;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  author?: {
-    id: number;
-    display_name: string;
-    avatar_url: string | null;
-  };
-};
-
-function mapApiService(service: ApiServiceResponse): ProfileService {
-  return {
-    id: String(service.id),
-    title: service.title,
-    description: service.description,
-    price: service.price ?? 0,
-    deliveryTime: service.execution_period_days,
-    tags: service.tags?.map((tag) => tag.name) ?? [],
-  };
-}
-
-function mapApiReview(review: ApiReviewResponse): ProfileReview {
-  return {
-    id: String(review.id),
-    clientName: review.author?.display_name || "Пользователь",
-    rating: review.rating,
-    comment: review.comment || "Без комментария",
-    date: review.created_at,
-  };
+function formatRating(rating: number | null) {
+  return rating === null ? 'Новый' : rating.toFixed(1);
 }
 
 export function FreelancerProfilePage() {
   const { id } = useParams();
-  const location = useLocation();
-  const freelancerFromState = (location.state as { freelancer?: CatalogFreelancer } | null)?.freelancer;
-  const freelancerFromMock = getUserById(id || "");
-  const freelancer = freelancerFromState ?? freelancerFromMock;
-  const [services, setServices] = useState<ProfileService[]>([]);
-  const [reviews, setReviews] = useState<ProfileReview[]>([]);
-  const [isLoadingServices, setIsLoadingServices] = useState(true);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const navigate = useNavigate();
+  const freelancerId = Number(id);
+  const { data: freelancer, loading, error } = useAsyncData(
+    () => fetchFreelancerProfile(freelancerId),
+    [freelancerId],
+  );
 
-  useEffect(() => {
-    const userId = id || "";
-    if (!userId) {
-      setIsLoadingServices(false);
-      setIsLoadingReviews(false);
-      return;
-    }
-
-    const API_URL = import.meta.env.VITE_API_URL;
-
-    const fetchServices = async () => {
-      setIsLoadingServices(true);
-
-      try {
-        const response = await fetch(`${API_URL}/api/v1/users/${userId}/services`);
-        if (!response.ok) {
-          throw new Error("Не удалось загрузить услуги пользователя");
-        }
-
-        const json = await response.json();
-        const items = (json.data?.items ?? []) as ApiServiceResponse[];
-        setServices(items.map(mapApiService));
-      } catch (error) {
-        console.warn("Фоллбэк услуг профиля: сервер недоступен, используем моки", error);
-        setServices(
-          getServicesByFreelancer(userId).map((service) => ({
-            id: service.id,
-            title: service.title,
-            description: service.description,
-            price: service.price,
-            deliveryTime: service.deliveryTime,
-            tags: service.tags,
-          }))
-        );
-      } finally {
-        setIsLoadingServices(false);
-      }
-    };
-
-    const fetchReviews = async () => {
-      setIsLoadingReviews(true);
-
-      try {
-        const response = await fetch(`${API_URL}/api/v1/users/${userId}/reviews?role=freelancer`);
-        if (!response.ok) {
-          throw new Error("Не удалось загрузить отзывы пользователя");
-        }
-
-        const json = await response.json();
-        const items = (json.data?.items ?? []) as ApiReviewResponse[];
-        setReviews(items.map(mapApiReview));
-      } catch (error) {
-        console.warn("Фоллбэк отзывов профиля: сервер недоступен, используем моки", error);
-        setReviews(
-          getReviewsByFreelancer(userId).map((review) => ({
-            id: review.id,
-            clientName: review.clientName,
-            rating: review.rating,
-            comment: review.comment,
-            date: review.date,
-          }))
-        );
-      } finally {
-        setIsLoadingReviews(false);
-      }
-    };
-
-    fetchServices();
-    fetchReviews();
-  }, [id]);
-
-  if (!freelancer) {
+  if (!Number.isFinite(freelancerId)) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <p>Фрилансер не найден</p>
+      <div className="min-h-screen pt-24 pb-12 px-6 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-4">Фрилансер не найден</h1>
+          <button
+            onClick={() => navigate('/freelancers')}
+            className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all"
+          >
+            Вернуться к списку
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="min-h-screen pt-24 pb-12 px-6">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate('/freelancers')}
+          className="mb-8 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>Назад к списку фрилансеров</span>
+        </button>
 
-      <div className="flex-1 bg-gray-50 py-8">
-        <div className="container mx-auto px-4">
-          {/* Profile Header */}
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-5xl font-bold flex-shrink-0">
-                  {freelancer.name[0]}
-                </div>
+        {loading && <p className="text-muted-foreground">Загружаем профиль...</p>}
 
-                <div className="flex-1">
-                  <h1 className="text-3xl font-bold mb-2">{freelancer.name}</h1>
+        {error && (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-destructive">
+            Не удалось загрузить профиль: {error}
+          </div>
+        )}
 
-                  <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {freelancer.location || "Город не указан"}
-                    </div>
-                    {freelancer.joinedDate && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        На платформе с{" "}
-                        {new Date(freelancer.joinedDate).toLocaleDateString("ru-RU", {
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </div>
-                    )}
-                    {"languages" in freelancer &&
-                      Array.isArray(freelancer.languages) &&
-                      freelancer.languages.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <Globe className="w-4 h-4" />
-                          {freelancer.languages.join(", ")}
-                        </div>
-                      )}
-                    {freelancer.email && (
-                      <div className="flex items-center gap-1">
-                        <MailIcon className="w-4 h-4" />
-                        {freelancer.email}
-                      </div>
-                    )}
+        {!loading && !error && !freelancer && (
+          <div className="rounded-2xl border border-border bg-card p-8 text-muted-foreground">
+            Фрилансер не найден.
+          </div>
+        )}
+
+        {freelancer && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1">
+              <div className="bg-card border border-border rounded-2xl p-8 sticky top-24">
+                <div className="flex flex-col items-center text-center space-y-6">
+                  <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl flex items-center justify-center text-5xl font-semibold text-primary">
+                    {freelancer.fullName.slice(0, 1)}
                   </div>
 
-                  <div className="flex flex-wrap gap-6 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xl font-semibold">
-                        {freelancer.rating || 0}
-                      </span>
-                      <span className="text-gray-600">
-                        ({freelancer.reviewCount || 0} отзывов)
-                      </span>
-                    </div>
-                    {"completedJobs" in freelancer && typeof freelancer.completedJobs === "number" && (
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-5 h-5" />
-                        <span className="font-semibold">
-                          {freelancer.completedJobs}
-                        </span>
-                        <span className="text-gray-600">выполнено</span>
-                      </div>
-                    )}
+                  <div>
+                    <h2 className="text-2xl font-semibold text-foreground mb-2">
+                      {freelancer.fullName}
+                    </h2>
+                    <p className="text-muted-foreground">{freelancer.skills.slice(0, 2).join(', ')}</p>
                   </div>
 
-                  <p className="text-gray-700 mb-4">
-                    {freelancer.bio || "Пользователь пока не добавил описание"}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {freelancer.skills?.map((skill) => (
-                      <Badge key={skill} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    <span className="font-semibold text-xl">{formatRating(freelancer.rating)}</span>
+                    <span className="text-muted-foreground text-sm">
+                      {freelancer.ratingsCount > 0 ? `${freelancer.ratingsCount} оцен.` : 'профиль'}
+                    </span>
                   </div>
 
-
+                
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Tabs */}
-          <Tabs defaultValue="services" className="mb-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="services">Услуги</TabsTrigger>
-              <TabsTrigger value="reviews">Отзывы</TabsTrigger>
-              {/* <TabsTrigger value="portfolio">Портфолио</TabsTrigger> */}
-            </TabsList>
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4">О специалисте</h3>
+                <p className="text-muted-foreground leading-relaxed">{freelancer.description}</p>
+              </div>
 
-            <TabsContent value="services" className="space-y-4">
-              {isLoadingServices ? (
-                <Card>
-                  <CardContent className="pt-6 text-center py-12 text-gray-600">
-                    Загружаем услуги...
-                  </CardContent>
-                </Card>
-              ) : services.length > 0 ? (
-                services.map((service) => (
-                  <Card key={service.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col md:flex-row gap-4">
-                        <div className="w-full md:w-48 h-32 bg-gradient-to-br from-purple-200 to-blue-200 rounded-lg flex items-center justify-center">
-                          <Briefcase className="w-12 h-12 text-purple-600" />
-                        </div>
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4">Контакты</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Mail className="w-4 h-4 text-primary" />
+                    <span>{freelancer.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Phone className="w-4 h-4 text-primary" />
+                    <span>{freelancer.phoneNumber}</span>
+                  </div>
+                </div>
+              </div>
 
-                        <div className="flex-1">
-                          <h3 className="text-xl font-semibold mb-2">
-                            {service.title}
-                          </h3>
-                          <p className="text-gray-600 mb-3 line-clamp-2">
-                            {service.description}
-                          </p>
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4">Навыки</h3>
+                <div className="flex flex-wrap gap-2">
+                  {freelancer.skills.map((skill) => (
+                    <span key={skill} className="px-4 py-2 bg-muted text-foreground rounded-lg">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {service.tags?.map((tag) => (
-                              <Badge key={tag} variant="outline">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-4">
-                            <div className="text-2xl font-bold text-blue-600">
-                              {service.price.toLocaleString()} ₽
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-6">Портфолио</h3>
+                {freelancer.portfolio.length === 0 ? (
+                  <p className="text-muted-foreground">Работы пока не добавлены.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {freelancer.portfolio.map((project) => (
+                      <div
+                        key={project.albumId}
+                        className="border border-border rounded-xl p-5 hover:shadow-md transition-all hover:border-primary/30"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h4 className="font-semibold text-foreground mb-1">{project.title}</h4>
+                            <p className="mb-3 text-sm text-muted-foreground">{project.description}</p>
+                            <div className="text-xs text-muted-foreground">
+                              Добавлено {formatDate(project.creationDate)}
                             </div>
-                            <div className="text-gray-600">
-                              Срок: {service.deliveryTime} дней
-                            </div>
-                            <Button className="ml-auto">Заказать</Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center py-12 text-gray-600">
-                    Услуги пока не добавлены
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="reviews" className="space-y-4">
-              {isLoadingReviews ? (
-                <Card>
-                  <CardContent className="pt-6 text-center py-12 text-gray-600">
-                    Загружаем отзывы...
-                  </CardContent>
-                </Card>
-              ) : reviews.length > 0 ? (
-                reviews.map((review) => (
-                  <Card key={review.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                          {review.clientName[0]}
-                        </div>
-
-                        <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-                            <div>
-                              <div className="font-semibold">
-                                {review.clientName}
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                {new Date(review.date).toLocaleDateString("ru-RU", {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                })}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-5 h-5 ${i < review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                    }`}
-                                />
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {project.fileLinks.map((link) => (
+                                <a
+                                  key={link}
+                                  href={link}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary hover:bg-primary/15"
+                                >
+                                  Ссылка
+                                </a>
                               ))}
                             </div>
                           </div>
-                          <p className="text-gray-700">{review.comment}</p>
+                          <Briefcase className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="pt-6 text-center py-12 text-gray-600">
-                    Отзывы пока отсутствуют
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-{/* 
-            <TabsContent value="portfolio" className="space-y-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div
-                        key={i}
-                        className="aspect-video bg-gradient-to-br from-purple-200 to-blue-200 rounded-lg flex items-center justify-center"
-                      >
-                        <Award className="w-12 h-12 text-purple-600" />
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent> */}
-          </Tabs>
-        </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
