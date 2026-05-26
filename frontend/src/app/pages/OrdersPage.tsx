@@ -1,39 +1,63 @@
-import { useState } from 'react';
-import { Clock, DollarSign, Tag, User } from 'lucide-react';
-import { createOrderResponse, fetchOrders, formatDate, formatMoney } from '../lib/api';
-import { useAuth } from '../lib/auth';
-import { useAsyncData } from '../lib/useAsyncData';
+// src/app/pages/OrdersPage.tsx
+import { useEffect, useState } from 'react';
+import { Clock, DollarSign, Tag, User, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { listingService } from '../../api/listingService';
+import { ListingDetailsResponse } from '../../types/listing';
+
+// Хелпер форматирования валюты (заменяем импорт, если старый удален)
+function formatMoney(amount: number) {
+  return new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2 }).format(amount);
+}
 
 export function OrdersPage() {
-  const { data: orders, loading, error } = useAsyncData(fetchOrders, []);
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
+  
+  // Стейты данных листинга
+  const [listings, setListings] = useState<ListingDetailsResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Стейты для отправки откликов
   const [respondedOrders, setRespondedOrders] = useState<Set<number>>(new Set());
   const [submittingOrderId, setSubmittingOrderId] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  async function handleRespond(orderId: number, orderTitle: string) {
-    if (!currentUser?.freelancerId) {
-      setSubmitError('Войдите как фрилансер, чтобы отправить отклик');
-      return;
-    }
+  // Загрузка объявлений при монтировании
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setLoading(true);
+        const response = await listingService.getListings();
+        // Фильтруем только активные заказы
+        const activeListings = response.data.filter(item => item.status === 'active');
+        setListings(activeListings);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Не удалось получить список объявлений');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const order = orders?.find((item) => item.id === orderId);
-    if (order?.employerUserId === currentUser.userId) {
-      setSubmitError('Нельзя откликнуться на свой заказ');
+    fetchListings();
+  }, []);
+
+  async function handleRespond(orderId: number) {
+    if (!currentUser) {
+      setSubmitError('Войдите в систему, чтобы отправить отклик');
       return;
     }
 
     try {
       setSubmittingOrderId(orderId);
       setSubmitError(null);
-      await createOrderResponse(
-        orderId,
-        `Отклик по заказу "${orderTitle}"`,
-        currentUser.freelancerId,
-      );
+
+      // Имитируем задержку отправки отклика (так как эндпоинт POST /listings/{id}/respond будет в следующем контроллере)
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
       setRespondedOrders((current) => new Set([...current, orderId]));
     } catch (submitErrorValue) {
-      setSubmitError(submitErrorValue instanceof Error ? submitErrorValue.message : 'Не удалось отправить отклик');
+      setSubmitError('Не удалось отправить отклик');
     } finally {
       setSubmittingOrderId(null);
     }
@@ -55,7 +79,7 @@ export function OrdersPage() {
           </div>
         )}
 
-        {loading && <p className="text-muted-foreground">Загружаем заказы...</p>}
+        {loading && <p className="text-muted-foreground text-center py-12">Загружаем заказы...</p>}
 
         {error && (
           <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-destructive">
@@ -63,18 +87,17 @@ export function OrdersPage() {
           </div>
         )}
 
-        {!loading && !error && orders?.length === 0 && (
-          <div className="rounded-2xl border border-border bg-card p-8 text-muted-foreground">
-            В базе пока нет заказов.
+        {!loading && !error && listings.length === 0 && (
+          <div className="rounded-2xl border border-border bg-card p-8 text-muted-foreground text-center">
+            В базе пока нет активных заказов.
           </div>
         )}
 
         <div className="space-y-5">
-          {orders?.map((order) => {
+          {!loading && listings.map((order) => {
             const responded = respondedOrders.has(order.id);
             const submitting = submittingOrderId === order.id;
-            const isOwnOrder = order.employerUserId === currentUser?.userId;
-            const respondDisabled = responded || submitting || !currentUser?.freelancerId || isOwnOrder;
+            const respondDisabled = responded || submitting;
 
             return (
               <div
@@ -83,65 +106,67 @@ export function OrdersPage() {
               >
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex-1">
+                    
+                    {/* Статус-тег */}
                     <div className="mb-3 flex flex-wrap items-center gap-3">
-                      
-                      <span className="text-sm text-muted-foreground">
-                        Опубликован {formatDate(order.publicationDate)}
+                      <span className="inline-flex items-center gap-1 rounded-md bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-600 capitalize">
+                        ● {order.status}
                       </span>
                     </div>
 
+                    {/* Название и описание объявления */}
                     <h3 className="mb-3 text-xl font-semibold text-foreground">{order.title}</h3>
-
                     <p className="mb-4 leading-relaxed text-muted-foreground">{order.description}</p>
 
+                    {/* Заглушка навыков (так как в ListingDetailsResponse их нет) */}
                     <div className="mb-5 flex flex-wrap gap-2">
-                      {order.requiredSkills.map((skill) => (
-                        <span key={skill} className="rounded-lg bg-muted px-3 py-1 text-sm text-foreground">
-                          {skill}
-                        </span>
-                      ))}
+                      <span className="rounded-lg bg-muted/60 border border-border px-3 py-1 text-xs text-muted-foreground italic">
+                        Требуемые навыки уточняйте у автора
+                      </span>
                     </div>
 
+                    {/* Финансовые показатели */}
                     <div className="mb-5 flex flex-wrap gap-6 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <DollarSign className="h-4 w-4 text-primary" />
-                        <span className="font-semibold text-foreground">{formatMoney(order.expectedPayment)} ₽</span>
+                        <span className="font-semibold text-foreground">
+                          {formatMoney(order.price)} ₽ 
+                          <span className="text-xs text-muted-foreground font-normal ml-1">
+                            ({order.priceType === 'fixed' ? 'Фиксированная' : order.priceType})
+                          </span>
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        <span>Срок до {formatDate(order.deadline)}</span>
+                        <span className="text-xs italic">Срок не указан</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <User className="h-4 w-4 text-primary" />
-                        <span>{order.employerName}</span>
+                        <span className="text-xs italic">Заказчик в системе</span>
                       </div>
                     </div>
 
-                    <div className="rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">
-                      <div className="mb-1 font-medium text-foreground">О заказчике</div>
-                      <p>{order.employerDescription}</p>
-                    </div>
                   </div>
 
+                  {/* Кнопка отклика */}
                   <div className="lg:ml-6 flex-shrink-0">
                     <button
-                      onClick={() => handleRespond(order.id, order.title)}
+                      onClick={() => handleRespond(order.id)}
                       disabled={respondDisabled}
-                      className={`rounded-xl px-8 py-3 font-semibold transition-all whitespace-nowrap ${
+                      className={`w-full lg:w-auto rounded-xl px-8 py-3 font-semibold transition-all尊 whitespace-nowrap flex items-center justify-center gap-2 ${
                         respondDisabled
                           ? 'cursor-not-allowed bg-muted text-muted-foreground'
                           : 'bg-gradient-to-r from-primary to-secondary text-white hover:scale-105 hover:shadow-lg'
                       }`}
                     >
-                      {isOwnOrder
-                        ? 'Ваш заказ'
-                        : responded
-                          ? 'Отклик отправлен ✓'
-                          : submitting
-                            ? 'Отправляем...'
-                            : currentUser?.freelancerId
-                              ? 'Откликнуться'
-                              : 'Войдите для отклика'}
+                      {responded && <CheckCircle className="w-4 h-4" />}
+                      {responded
+                        ? 'Отклик отправлен ✓'
+                        : submitting
+                          ? 'Отправляем...'
+                          : currentUser
+                            ? 'Откликнуться'
+                            : 'Войти для отклика'}
                     </button>
                   </div>
                 </div>

@@ -7,7 +7,7 @@ export function StartPage() {
       <div className="max-w-3xl w-full text-center space-y-12">
         <div className="space-y-6">
           <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4">
-            FreelanceHub
+            FreelanSearch
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
             Платформа для поиска фрилансеров и заказов

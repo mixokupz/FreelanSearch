@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router';
 import { Zap, User, LogIn, LogOut } from 'lucide-react';
-import { useAuth } from '../lib/auth';
+import { useAuth } from '../../context/AuthContext';
 
 export function Header() {
   const location = useLocation();
-  const { currentUser, signOut } = useAuth();
+  const { user: currentUser, logout } = useAuth();
   const isAuthPage = location.pathname === '/auth';
 
   return (
@@ -15,7 +15,7 @@ export function Header() {
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <Zap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">FreelanceHub</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">FreelanSearch</span>
           </Link>
           {!isAuthPage && (
             <div className="flex items-center gap-3">
@@ -39,7 +39,7 @@ export function Header() {
                   </Link>
                   <button
                     type="button"
-                    onClick={signOut}
+                    onClick={logout}
                     className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-xl hover:bg-muted transition-all"
                   >
                     <LogOut className="w-4 h-4" />

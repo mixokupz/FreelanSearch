@@ -1,16 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { Mail, Lock, User, ArrowRight, LogIn, UserPlus, Phone } from 'lucide-react';
-import { useAuth } from '../lib/auth';
+import { useAuth } from '../../context/AuthContext'; 
 
 export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [skills, setSkills] = useState('');
-  const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -24,9 +21,9 @@ export function AuthPage() {
     try {
       const user = isLogin
         ? await signIn({ email, password })
-        : await signUp({ fullName, email, phoneNumber, password, skills, description });
+        : await signUp({ fullName, email, password });
 
-      navigate(user.freelancerId ? '/my-profile' : '/');
+      navigate(user.userId ? '/my-profile' : '/');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Не удалось выполнить действие');
     } finally {
@@ -46,7 +43,7 @@ export function AuthPage() {
             )}
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            {isLogin ? 'Вход в FreelanceHub' : 'Регистрация'}
+            {isLogin ? 'Вход в FreelanSearch' : 'Регистрация'}
           </h1>
           <p className="text-muted-foreground">
             {isLogin
@@ -80,20 +77,7 @@ export function AuthPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Телефон</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(event) => setPhoneNumber(event.target.value)}
-                      placeholder="+7 (900) 000-00-00"
-                      className="w-full pl-11 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      required
-                    />
-                  </div>
-                </div>
+      
               </>
             )}
 
@@ -126,31 +110,6 @@ export function AuthPage() {
                 />
               </div>
             </div>
-
-            {!isLogin && (
-              <>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Навыки</label>
-                  <input
-                    type="text"
-                    value={skills}
-                    onChange={(event) => setSkills(event.target.value)}
-                    placeholder="React, Django, PostgreSQL"
-                    className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">О себе</label>
-                  <textarea
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    placeholder="Коротко опишите опыт и специализацию"
-                    className="min-h-24 w-full resize-none px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                </div>
-              </>
-            )}
 
             <button
               type="submit"

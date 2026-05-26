@@ -1,213 +1,112 @@
-import { useState } from 'react';
-import { Link, Navigate } from 'react-router';
+// src/app/pages/MyProfilePage.tsx
+import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router';
+import { useAuth } from '../../context/AuthContext';
+import { userService } from '../../api/userService';
+import { OwnProfileResponse, UpdateProfileRequest } from '../../types/user';
 import {
-  Briefcase,
-  Building2,
-  Calendar,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Edit,
-  Eye,
-  Mail,
-  Phone,
-  Star,
-  Trash2,
-  UserCircle,
-  Users,
-  XCircle,
+  UserCircle, Building2, Star, Mail, Phone, MapPin, Edit,
+  XCircle, Save
 } from 'lucide-react';
-import * as Dialog from '@radix-ui/react-dialog';
-import {
-  acceptContract,
-  createContract,
-  deleteOrderResponse,
-  fetchEmployerProjects,
-  fetchMyProfileData,
-  formatDate,
-  formatMoney,
-  rejectContract,
-  type EmployerProject,
-  type ProjectApplicant,
-  type ResponseCard,
-} from '../lib/api';
-import { useAuth } from '../lib/auth';
-import { useAsyncData } from '../lib/useAsyncData';
 
-const responseStatusText: Record<string, string> = {
-  pending: 'В ожидании',
-  accepted: 'Принят',
-  rejected: 'Отклонён',
-};
-
-const contractStatusText: Record<string, string> = {
-  active: 'Активен',
-  completed: 'Завершён',
-  cancelled: 'Отменён',
-  disputed: 'Спор',
-};
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'accepted':
-      return 'bg-green-500/10 text-green-600';
-    case 'rejected':
-      return 'bg-red-500/10 text-red-600';
-    case 'pending':
-    default:
-      return 'bg-blue-500/10 text-blue-600';
+// Безопасная функция форматирования рейтинга
+function formatRating(rating: number | null | undefined) {
+  if (rating === null || rating === undefined || rating === 0) {
+    return 'Новый';
   }
-}
-
-function buildDeadline(days: string) {
-  const date = new Date();
-  date.setDate(date.getDate() + Number(days));
-  return date.toISOString();
-}
-
-function formatRating(rating: number | null) {
-  return rating === null ? 'Новый' : rating.toFixed(1);
+  return typeof rating === 'number' ? rating.toFixed(1) : 'Новый';
 }
 
 export function MyProfilePage() {
-  const { currentUser, loading: authLoading } = useAuth();
-  const freelancerId = currentUser?.freelancerId ?? null;
-  const employerId = currentUser?.employerId ?? null;
-  const [isFreelancer, setIsFreelancer] = useState(Boolean(freelancerId));
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [selectedResponse, setSelectedResponse] = useState<ResponseCard | null>(null);
-  const [selectedProject, setSelectedProject] = useState<EmployerProject | null>(null);
-  const [selectedApplicant, setSelectedApplicant] = useState<ProjectApplicant | null>(null);
-  const [contractForm, setContractForm] = useState({ payment: '', deadline: '' });
-  const [actionError, setActionError] = useState<string | null>(null);
+  const { user: currentUser } = useAuth();
+
+  const [profile, setProfile] = useState<OwnProfileResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [isFreelancer, setIsFreelancer] = useState(true);
+
+  // Стейты для редактирования (переведены на camelCase)
+  const [isEditing, setIsEditing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<UpdateProfileRequest>({
+    displayName: '',
+    bio: '',
+    city: '',
+    avatarUrl: ''
+  });
 
-  const freelancerState = useAsyncData(
-    () => {
-      if (!freelancerId) {
-        return Promise.resolve(null);
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await userService.getMe();
+        setProfile(response.data);
+
+        // Инициализируем форму новыми camelCase полями
+        setFormData({
+          displayName: response.data.displayName || '',
+          bio: response.data.bio || '',
+          city: response.data.city || '',
+          avatarUrl: response.data.avatarUrl || ''
+        });
+
+        if (response.data.role === 'employer') {
+          setIsFreelancer(false);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Не удалось загрузить профиль');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      return fetchMyProfileData(freelancerId);
-    },
-    [freelancerId, refreshKey],
-  );
+    fetchProfile();
+  }, [currentUser]);
 
-  const employerState = useAsyncData(
-    () => {
-      if (!employerId) {
-        return Promise.resolve([]);
-      }
+  // Обработчик сохранения формы
+  async function handleSaveChanges(e: React.FormEvent) {
+    e.preventDefault();
+    setActionLoading(true);
+    setActionError(null);
 
-      return fetchEmployerProjects(employerId);
-    },
-    [employerId, refreshKey],
-  );
+    try {
+      const response = await userService.updateMe(formData);
+      setProfile(response.data);
+      setIsEditing(false);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Не удалось сохранить изменения');
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen pt-24 pb-12 px-6">
-        <div className="max-w-6xl mx-auto text-muted-foreground">Проверяем авторизацию...</div>
-      </div>
-    );
+  // Сброс формы при отмене изменений
+  function handleCancelEdit() {
+    if (profile) {
+      setFormData({
+        displayName: profile.displayName || '',
+        bio: profile.bio || '',
+        city: profile.city || '',
+        avatarUrl: profile.avatarUrl || ''
+      });
+    }
+    setIsEditing(false);
+    setActionError(null);
   }
 
   if (!currentUser) {
     return <Navigate to="/auth" replace />;
   }
 
-  const canShowSwitcher = Boolean(freelancerId && employerId);
-  const profile = freelancerState.data?.profile;
-  const contracts = freelancerState.data?.contracts ?? [];
-  const responses = freelancerState.data?.responses ?? [];
-  const employerProjects = employerState.data ?? [];
-
-  async function handleDeleteApplication(responseId: number) {
-    if (!freelancerId) {
-      return;
-    }
-
-    setActionLoading(true);
-    setActionError(null);
-    try {
-      await deleteOrderResponse(responseId, freelancerId);
-      setRefreshKey((value) => value + 1);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Не удалось удалить отклик');
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function handleAcceptContract() {
-    if (!freelancerId || !selectedResponse?.contract) {
-      return;
-    }
-
-    setActionLoading(true);
-    setActionError(null);
-    try {
-      await acceptContract(selectedResponse.contract.contractId, freelancerId);
-      setSelectedResponse(null);
-      setRefreshKey((value) => value + 1);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Не удалось подтвердить контракт');
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function handleRejectContract() {
-    if (!freelancerId || !selectedResponse?.contract) {
-      return;
-    }
-
-    setActionLoading(true);
-    setActionError(null);
-    try {
-      await rejectContract(selectedResponse.contract.contractId, freelancerId);
-      setSelectedResponse(null);
-      setRefreshKey((value) => value + 1);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Не удалось отклонить контракт');
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function handleSendContract() {
-    if (!selectedProject || !selectedApplicant || !contractForm.payment || !contractForm.deadline) {
-      return;
-    }
-
-    if (selectedApplicant.userId === currentUser.userId) {
-      setActionError('Нельзя заключить контракт с самим собой');
-      return;
-    }
-
-    setActionLoading(true);
-    setActionError(null);
-    try {
-      await createContract(
-        selectedProject.id,
-        selectedApplicant.freelancerId,
-        Number(contractForm.payment),
-        buildDeadline(contractForm.deadline),
-      );
-      setSelectedApplicant(null);
-      setSelectedProject(null);
-      setContractForm({ payment: '', deadline: '' });
-      setRefreshKey((value) => value + 1);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Не удалось создать контракт');
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
   return (
     <div className="min-h-screen pt-24 pb-12 px-6">
       <div className="max-w-6xl mx-auto">
+
+        {/* Шапка профиля */}
         <div className="mb-12">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
@@ -217,476 +116,237 @@ export function MyProfilePage() {
               </p>
             </div>
 
-            {canShowSwitcher && (
-              <div className="bg-card border border-border rounded-2xl p-2 flex gap-2">
-                <button
-                  onClick={() => setIsFreelancer(true)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
-                    isFreelancer
-                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                      : 'text-muted-foreground hover:text-foreground'
+            {/* Переключатель ролей */}
+            <div className="bg-card border border-border rounded-2xl p-2 flex gap-2">
+              <button
+                disabled={isEditing}
+                onClick={() => setIsFreelancer(true)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all disabled:opacity-50 ${isFreelancer
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
+                    : 'text-muted-foreground hover:text-foreground'
                   }`}
-                >
-                  <UserCircle className="w-5 h-5" />
-                  Фрилансер
-                </button>
-                <button
-                  onClick={() => setIsFreelancer(false)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
-                    !isFreelancer
-                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                      : 'text-muted-foreground hover:text-foreground'
+              >
+                <UserCircle className="w-5 h-5" />
+                Фрилансер
+              </button>
+              <button
+                disabled={isEditing}
+                onClick={() => setIsFreelancer(false)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all disabled:opacity-50 ${!isFreelancer
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
+                    : 'text-muted-foreground hover:text-foreground'
                   }`}
-                >
-                  <Building2 className="w-5 h-5" />
-                  Заказчик
-                </button>
-              </div>
-            )}
+              >
+                <Building2 className="w-5 h-5" />
+                Заказчик
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Вывод ошибок операций сохранения */}
         {actionError && (
-          <div className="mb-6 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-destructive">
-            {actionError}
+          <div className="mb-6 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-destructive flex items-center gap-3">
+            <XCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{actionError}</span>
           </div>
         )}
 
-        {isFreelancer && !freelancerId && (
-          <div className="rounded-2xl border border-border bg-card p-8 text-muted-foreground">
-            У текущего пользователя нет профиля фрилансера.
+        {/* Состояние загрузки данных */}
+        {loading && <p className="text-muted-foreground text-center py-12">Загружаем данные профиля...</p>}
+
+        {/* Ошибка загрузки */}
+        {error && (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-destructive mb-6">
+            Не удалось загрузить профиль: {error}
           </div>
         )}
 
-        {!isFreelancer && !employerId && (
-          <div className="rounded-2xl border border-border bg-card p-8 text-muted-foreground">
-            У текущего пользователя нет профиля заказчика.
-          </div>
-        )}
-
-        {isFreelancer && freelancerId && (
+        {/* Основной контент */}
+        {!loading && !error && profile && (
           <>
-            {freelancerState.loading && <p className="text-muted-foreground">Загружаем профиль...</p>}
-
-            {freelancerState.error && (
-              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-destructive">
-                Не удалось загрузить профиль: {freelancerState.error}
-              </div>
-            )}
-
-            {profile && (
+            {isFreelancer ? (
+              /* ================= РЕЖИМ ФРИЛАНСЕРА ================= */
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                {/* Левая колонка: Карточка */}
                 <div className="lg:col-span-1">
                   <div className="bg-card border border-border rounded-2xl p-8 sticky top-24">
                     <div className="flex flex-col items-center text-center space-y-6">
-                      <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl flex items-center justify-center text-5xl font-semibold text-primary">
-                        {profile.fullName.slice(0, 1)}
+
+                      {/* Аватар */}
+                      <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl flex items-center justify-center text-5xl font-semibold text-primary overflow-hidden">
+                        {formData.avatarUrl ? (
+                          <img src={formData.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" />
+                        ) : (
+                          profile.displayName?.slice(0, 1).toUpperCase() || 'U'
+                        )}
                       </div>
 
                       <div>
-                        <h2 className="text-2xl font-semibold text-foreground mb-2">{profile.fullName}</h2>
-                        <p className="text-muted-foreground">Фрилансер</p>
+                        <h2 className="text-2xl font-semibold text-foreground mb-2">{profile.displayName || 'Имя не указано'}</h2>
+                        <p className="text-muted-foreground capitalize">Роль: {profile.role}</p>
                       </div>
 
+                      {/* Рейтинг */}
                       <div className="flex items-center gap-2">
                         <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-xl">{formatRating(profile.rating)}</span>
+                        <span className="font-semibold text-xl">{formatRating(profile.avgRating)}</span>
                         <span className="text-muted-foreground text-sm">
-                          {profile.ratingsCount > 0 ? `${profile.ratingsCount} оцен.` : 'профиль'}
+                          ({profile.reviewsCount ?? 0} отв.)
                         </span>
                       </div>
 
+                      {/* Контакты и город */}
                       <div className="w-full pt-6 border-t border-border space-y-4 text-left">
                         <div className="flex items-center gap-3 text-sm">
                           <Mail className="w-4 h-4 text-primary" />
                           <span className="text-muted-foreground">{profile.email}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <Phone className="w-4 h-4 text-primary" />
-                          <span className="text-muted-foreground">{profile.phoneNumber}</span>
-                        </div>
+                        {profile.phone && (
+                          <div className="flex items-center gap-3 text-sm">
+                            <Phone className="w-4 h-4 text-primary" />
+                            <span className="text-muted-foreground">{profile.phone}</span>
+                          </div>
+                        )}
+                        {profile.city && !isEditing && (
+                          <div className="flex items-center gap-3 text-sm">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            <span className="text-muted-foreground">{profile.city}</span>
+                          </div>
+                        )}
                       </div>
 
-                      
-                    </div>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <h3 className="text-xl font-semibold text-foreground mb-4">О себе</h3>
-                    <p className="text-muted-foreground leading-relaxed">{profile.description}</p>
-                  </div>
-
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <h3 className="text-xl font-semibold text-foreground mb-4">Навыки</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.skills.map((skill) => (
-                        <span key={skill} className="px-4 py-2 bg-muted text-foreground rounded-lg">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <h3 className="text-xl font-semibold text-foreground mb-6">Мои отклики</h3>
-                    {responses.length === 0 ? (
-                      <div className="rounded-xl bg-muted/50 p-6 text-muted-foreground">
-                        У вас пока нет откликов. Посмотрите доступные <Link to="/orders" className="text-primary hover:text-secondary">заказы</Link>.
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {responses.map((response) => (
-                          <div key={response.id} className="border border-border rounded-xl p-5 hover:shadow-md transition-shadow hover:border-primary/30">
-                            <div className="mb-3 flex items-start justify-between gap-4">
-                              <div>
-                                <h4 className="text-lg font-semibold text-foreground mb-1">{response.projectTitle}</h4>
-                                <p className="text-sm text-muted-foreground">{response.clientName}</p>
-                              </div>
-                              <span className={`px-3 py-1 text-xs rounded-lg font-medium ${getStatusColor(response.status)}`}>
-                                {responseStatusText[response.status] ?? response.status}
-                              </span>
-                            </div>
-
-                            <div className="mb-4 grid gap-3 text-sm sm:grid-cols-3">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <DollarSign className="h-4 w-4 text-primary" />
-                                <span>{formatMoney(response.expectedPayment)} ₽</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Calendar className="h-4 w-4 text-primary" />
-                                <span>{formatDate(response.deadline)}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Clock className="h-4 w-4 text-primary" />
-                                <span>{formatDate(response.responseDate)}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              {response.status === 'accepted' && response.contract && (
-                                <button
-                                  onClick={() => setSelectedResponse(response)}
-                                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all text-sm"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  Контракт
-                                </button>
-                              )}
-                              { (
-                                <button
-                                  onClick={() => handleDeleteApplication(response.id)}
-                                  disabled={actionLoading}
-                                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500/20 transition-all text-sm disabled:opacity-60"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Удалить
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-card border border-border rounded-2xl p-6">
-                    <h3 className="text-xl font-semibold text-foreground mb-6">Мои контракты</h3>
-                    {contracts.length === 0 ? (
-                      <p className="text-muted-foreground">Контрактов пока нет.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {contracts.map((contract) => (
-                          <div key={contract.contractId} className="border border-border rounded-xl p-5">
-                            <div className="mb-4 flex items-start justify-between gap-4">
-                              <div>
-                                <h4 className="text-lg font-semibold text-foreground mb-1">{contract.orderTitle}</h4>
-                                <p className="text-sm text-muted-foreground">{contract.employerName}</p>
-                              </div>
-                              <span className="rounded-lg bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                                {contractStatusText[contract.status] ?? contract.status}
-                              </span>
-                            </div>
-                            <div className="grid gap-3 text-sm sm:grid-cols-3">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <DollarSign className="h-4 w-4 text-primary" />
-                                <span className="font-semibold text-foreground">{formatMoney(contract.paymentAmount)} ₽</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Calendar className="h-4 w-4 text-primary" />
-                                <span>{formatDate(contract.deadline)}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Briefcase className="h-4 w-4 text-primary" />
-                                <span>#{contract.contractId}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {!isFreelancer && employerId && (
-          <>
-            {employerState.loading && <p className="text-muted-foreground">Загружаем проекты...</p>}
-
-            {employerState.error && (
-              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-destructive">
-                Не удалось загрузить проекты: {employerState.error}
-              </div>
-            )}
-
-            {!employerState.loading && !employerState.error && (
-              <div className="bg-card border border-border rounded-2xl p-6">
-                <h3 className="text-xl font-semibold text-foreground mb-6">Мои проекты</h3>
-                {employerProjects.length === 0 ? (
-                  <p className="text-muted-foreground">Вы пока не разместили проекты.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {employerProjects.map((project) => (
-                      <div key={project.id} className="border border-border rounded-xl p-5 hover:shadow-md transition-shadow hover:border-primary/30">
-                        <div className="mb-4 flex items-start justify-between gap-4">
-                          <div>
-                            <h4 className="text-lg font-semibold text-foreground mb-1">{project.title}</h4>
-                            <p className="mb-3 text-sm text-muted-foreground">{project.description}</p>
-                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                              <span>Бюджет: {formatMoney(project.expectedPayment)} ₽</span>
-                              <span>Срок: {formatDate(project.deadline)}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-lg">
-                            <Users className="w-4 h-4" />
-                            <span className="font-semibold">{project.responses.length}</span>
-                          </div>
-                        </div>
-
+                      {!isEditing && (
                         <button
-                          onClick={() => setSelectedProject(project)}
-                          className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all"
+                          onClick={() => setIsEditing(true)}
+                          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all hover:scale-105"
                         >
-                          Посмотреть отклики ({project.responses.length})
+                          <Edit className="w-4 h-4" />
+                          Редактировать профиль
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Правая колонка: Форма ввода ИЛИ текстовое отображение */}
+                <div className="lg:col-span-2">
+                  {isEditing ? (
+                    /* ================= ФОРМА РЕДАКТИРОВАНИЯ ================= */
+                    <form onSubmit={handleSaveChanges} className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                      <h3 className="text-xl font-semibold text-foreground border-b border-border pb-3">Редактирование профиля</h3>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-2 block">Отображаемое имя</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={100}
+                          value={formData.displayName}
+                          onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                          placeholder="Ваше имя или псевдоним"
+                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-2 block">Ссылка на аватар (URL)</label>
+                        <input
+                          type="url"
+                          maxLength={500}
+                          value={formData.avatarUrl}
+                          onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                          placeholder="https://example.com/avatar.jpg"
+                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-2 block">Город</label>
+                        <input
+                          type="text"
+                          maxLength={100}
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          placeholder="Москва"
+                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-2 block">О себе (Bio)</label>
+                        <textarea
+                          rows={5}
+                          value={formData.bio}
+                          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                          placeholder="Расскажите о своем опыте работы и проектах..."
+                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                        />
+                      </div>
+
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          type="submit"
+                          disabled={actionLoading}
+                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed font-medium"
+                        >
+                          <Save className="w-5 h-5" />
+                          {actionLoading ? 'Сохранение...' : 'Сохранить'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionLoading}
+                          onClick={handleCancelEdit}
+                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-border transition-all disabled:opacity-70 font-medium"
+                        >
+                          Отмена
                         </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        <Dialog.Root open={!!selectedResponse} onOpenChange={(open) => !open && setSelectedResponse(null)}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-8">
-              <Dialog.Title className="text-2xl font-bold text-foreground mb-6">Детали контракта</Dialog.Title>
-              {selectedResponse?.contract && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{selectedResponse.projectTitle}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedResponse.clientName}</p>
-                  </div>
-                  <div className="border border-border rounded-xl p-4 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <DollarSign className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Оплата</div>
-                        <div className="text-lg font-semibold text-foreground">
-                          {formatMoney(selectedResponse.contract.paymentAmount)} ₽
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Срок выполнения</div>
-                        <div className="text-lg font-semibold text-foreground">
-                          {formatDate(selectedResponse.contract.deadline)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={handleAcceptContract}
-                      disabled={actionLoading}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-60"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Подтвердить
-                    </button>
-                    <button
-                      onClick={handleRejectContract}
-                      disabled={actionLoading}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500/20 transition-all disabled:opacity-60"
-                    >
-                      <XCircle className="w-5 h-5" />
-                      Отклонить
-                    </button>
-                  </div>
-                </div>
-              )}
-              <Dialog.Close className="absolute top-6 right-6 text-muted-foreground hover:text-foreground">
-                <XCircle className="w-6 h-6" />
-              </Dialog.Close>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-
-        <Dialog.Root open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border bg-card p-8">
-              <Dialog.Title className="text-2xl font-bold text-foreground mb-6">Отклики на проект</Dialog.Title>
-              {selectedProject && (
-                <div className="space-y-6">
-                  <div className="border-b border-border pb-4">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{selectedProject.title}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedProject.description}</p>
-                  </div>
-
-                  {selectedProject.responses.length === 0 ? (
-                    <p className="text-muted-foreground">На этот проект пока нет откликов.</p>
+                    </form>
                   ) : (
-                    <div className="space-y-4">
-                      {selectedProject.responses.map((applicant) => {
-                        const isSelfApplicant = applicant.userId === currentUser.userId;
-                        const contractDisabled = applicant.status === 'accepted' || isSelfApplicant;
+                    /* ================= ОБЫЧНЫЙ ПРОСМОТР ПРОФИЛЯ ================= */
+                    <div className="space-y-6">
+                      {/* О себе */}
+                      <div className="bg-card border border-border rounded-2xl p-6">
+                        <h3 className="text-xl font-semibold text-foreground mb-4">О себе</h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {profile.bio || 'Информация "О себе" пока не заполнена.'}
+                        </p>
+                      </div>
 
-                        return (
-                          <div key={applicant.responseId} className="border border-border rounded-xl p-5 hover:shadow-md transition-shadow">
-                            <div className="mb-4 flex items-start gap-4">
-                              <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center text-3xl font-semibold text-primary">
-                                {applicant.fullName.slice(0, 1)}
-                              </div>
-                              <div className="flex-1">
-                                <div className="mb-1 flex items-center justify-between gap-3">
-                                  <h4 className="text-lg font-semibold text-foreground">{applicant.fullName}</h4>
-                                  <span className={`px-3 py-1 text-xs rounded-lg font-medium ${getStatusColor(applicant.status)}`}>
-                                    {responseStatusText[applicant.status] ?? applicant.status}
-                                  </span>
-                                </div>
-                                <p className="mb-3 text-sm text-muted-foreground">{applicant.description}</p>
-                                <div className="mb-3 flex flex-wrap gap-2">
-                                  {applicant.skills.slice(0, 5).map((skill) => (
-                                    <span key={skill} className="rounded-lg bg-muted px-3 py-1 text-xs text-foreground">
-                                      {skill}
-                                    </span>
-                                  ))}
-                                </div>
-                                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                  <span>{applicant.email}</span>
-                                  <span>{applicant.phoneNumber}</span>
-                                </div>
-                              </div>
-                            </div>
+                      {/* Заглушка навыков */}
+                      <div className="bg-card border border-border rounded-2xl p-6">
+                        <h3 className="text-xl font-semibold text-foreground mb-4">Навыки</h3>
+                        <p className="text-sm text-muted-foreground italic">Данные о навыках не найдены в текущем профиле.</p>
+                      </div>
 
-                            <div className="mb-4 rounded-lg bg-muted p-4">
-                              <p className="text-sm text-foreground">{applicant.title}</p>
-                            </div>
-
-                            <button
-                              onClick={() => setSelectedApplicant(applicant)}
-                              disabled={contractDisabled}
-                              className="w-full px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {isSelfApplicant
-                                ? 'Это ваш отклик'
-                                : applicant.status === 'accepted'
-                                  ? 'Контракт уже предложен'
-                                  : 'Заключить контракт'}
-                            </button>
-                          </div>
-                        );
-                      })}
+                      {/* Заглушка для откликов */}
+                      <div className="bg-card border border-border rounded-2xl p-6">
+                        <h3 className="text-xl font-semibold text-foreground mb-4">Мои отклики и контракты</h3>
+                        <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+                          Активные контракты и отклики не найдены.
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
-              <Dialog.Close className="absolute top-6 right-6 text-muted-foreground hover:text-foreground">
-                <XCircle className="w-6 h-6" />
-              </Dialog.Close>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
-
-        <Dialog.Root open={!!selectedApplicant} onOpenChange={(open) => !open && setSelectedApplicant(null)}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-8">
-              <Dialog.Title className="text-2xl font-bold text-foreground mb-6">Создание контракта</Dialog.Title>
-              {selectedApplicant && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 border-b border-border pb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center text-2xl font-semibold text-primary">
-                      {selectedApplicant.fullName.slice(0, 1)}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">{selectedApplicant.fullName}</h4>
-                      <p className="text-sm text-muted-foreground">{selectedApplicant.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">Итоговая оплата (₽)</label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                        <input
-                          type="number"
-                          placeholder="Введите сумму"
-                          value={contractForm.payment}
-                          onChange={(event) => setContractForm({ ...contractForm, payment: event.target.value })}
-                          className="w-full pl-11 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">Срок выполнения (дней)</label>
-                      <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                        <input
-                          type="number"
-                          placeholder="Введите количество дней"
-                          value={contractForm.deadline}
-                          onChange={(event) => setContractForm({ ...contractForm, deadline: event.target.value })}
-                          className="w-full pl-11 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={handleSendContract}
-                      disabled={!contractForm.payment || !contractForm.deadline || actionLoading}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Отправить контракт
-                    </button>
-                    <button
-                      onClick={() => setSelectedApplicant(null)}
-                      className="px-6 py-3 bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-all"
-                    >
-                      Отмена
-                    </button>
-                  </div>
+              </div>
+            ) : (
+              /* ================= РЕЖИМ ЗАКАЗЧИКА ================= */
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="text-xl font-semibold text-foreground mb-6">Мои проекты (Заказчик)</h3>
+                
+                {/* Заглушка для проектов работодателя */}
+                <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+                  <p className="mb-2 font-medium text-foreground">Проекты не найдены</p>
+                  <p className="text-sm">Вы еще не создали ни одного проекта или эндпоинт проектов изменен.</p>
                 </div>
-              )}
-              <Dialog.Close className="absolute top-6 right-6 text-muted-foreground hover:text-foreground">
-                <XCircle className="w-6 h-6" />
-              </Dialog.Close>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+              </div>
+            )}
+          </>
+        )}
+
       </div>
     </div>
   );
