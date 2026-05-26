@@ -8,6 +8,8 @@ import ru.nsu.sdp.listings.entity.Listing;
 import ru.nsu.sdp.listings.exception.ListingException;
 import ru.nsu.sdp.listings.repository.ListingRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ListingService {
@@ -33,6 +35,13 @@ public class ListingService {
         Listing listing = listingRepository.findById(id)
                 .orElseThrow(ListingException.NotFound::new);
         return ListingDtos.ListingData.fromEntity(listing);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ListingDtos.ListingData> getByUserId(Long userId) {
+        return listingRepository.findAllByUserId(userId).stream()
+                .map(ListingDtos.ListingData::fromEntity)
+                .toList();
     }
 
     @Transactional

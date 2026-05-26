@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import ru.nsu.sdp.dto.ListingDtos;
 
 @Service
 @RequiredArgsConstructor
@@ -15,49 +14,78 @@ public class ListingsService {
     @Qualifier("listingsWebClient")
     private final WebClient webClient;
 
-    public Mono<ResponseEntity<String>> create(ListingDtos.CreateListingRequest request, String authHeader) {
+    public Mono<ResponseEntity<String>> create(
+            String body,
+            String authHeader
+    ) {
         return webClient.post()
                 .uri("/api/v1/listings")
-                .headers(headers -> {
-                    if (authHeader != null) {
-                        headers.set("Authorization", authHeader);
-                    }
-                })
-                .bodyValue(request)
-                .exchangeToMono(response -> response.toEntity(String.class));
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .bodyValue(body)
+                .exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(responseBody -> ResponseEntity.status(response.statusCode()).body(responseBody))
+                );
     }
 
-    public Mono<ResponseEntity<String>> getById(Long id, String authHeader) {
+    public Mono<ResponseEntity<String>> getById(
+            Long id,
+            String authHeader
+    ) {
         return webClient.get()
                 .uri("/api/v1/listings/{id}", id)
-                .headers(headers -> {
-                    if (authHeader != null) {
-                        headers.set("Authorization", authHeader);
-                    }
-                })
-                .exchangeToMono(response -> response.toEntity(String.class));
+                .header("Authorization", authHeader)
+                .exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(responseBody -> ResponseEntity.status(response.statusCode()).body(responseBody))
+                );
     }
 
-    public Mono<ResponseEntity<String>> update(Long id, ListingDtos.UpdateListingRequest request, String authHeader) {
+    public Mono<ResponseEntity<String>> update(
+            Long id,
+            String body,
+            String authHeader
+    ) {
         return webClient.put()
                 .uri("/api/v1/listings/{id}", id)
-                .headers(headers -> {
-                    if (authHeader != null) {
-                        headers.set("Authorization", authHeader);
-                    }
-                })
-                .bodyValue(request)
-                .exchangeToMono(response -> response.toEntity(String.class));
+                .header("Authorization", authHeader)
+                .header("Content-Type", "application/json")
+                .bodyValue(body)
+                .exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(responseBody -> ResponseEntity.status(response.statusCode()).body(responseBody))
+                );
     }
 
-    public Mono<ResponseEntity<String>> delete(Long id, String authHeader) {
+    public Mono<ResponseEntity<String>> delete(
+            Long id,
+            String authHeader
+    ) {
         return webClient.delete()
                 .uri("/api/v1/listings/{id}", id)
-                .headers(headers -> {
-                    if (authHeader != null) {
-                        headers.set("Authorization", authHeader);
-                    }
-                })
-                .exchangeToMono(response -> response.toEntity(String.class));
+                .header("Authorization", authHeader)
+                .exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(body -> ResponseEntity.status(response.statusCode()).body(body))
+                );
+    }
+
+    public Mono<ResponseEntity<String>> getByUserId(
+            Long userId,
+            String authHeader
+    ) {
+        return webClient.get()
+                .uri("/api/v1/listings/user/{userId}", userId)
+                .header("Authorization", authHeader)
+                .exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(body -> ResponseEntity.status(response.statusCode()).body(body))
+                );
     }
 }

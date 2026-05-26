@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
-import ru.nsu.sdp.dto.ListingDtos;
 import ru.nsu.sdp.service.ListingsService;
 
 @RestController
@@ -16,33 +15,41 @@ public class ListingController {
 
     @PostMapping
     public Mono<ResponseEntity<String>> create(
-            @RequestBody ListingDtos.CreateListingRequest request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestBody String body,
+            @RequestHeader("Authorization") String authHeader
     ) {
-        return listingsService.create(request, authHeader);
+        return listingsService.create(body, authHeader);
     }
 
     @GetMapping("/{id}")
     public Mono<ResponseEntity<String>> getById(
             @PathVariable Long id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader("Authorization") String authHeader
     ) {
         return listingsService.getById(id, authHeader);
+    }
+
+    @GetMapping("/user/{userId}")
+    public Mono<ResponseEntity<String>> getByUserId(
+            @PathVariable Long userId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        return listingsService.getByUserId(userId, authHeader);
     }
 
     @PutMapping("/{id}")
     public Mono<ResponseEntity<String>> update(
             @PathVariable Long id,
-            @RequestBody ListingDtos.UpdateListingRequest request,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestBody String body,
+            @RequestHeader("Authorization") String authHeader
     ) {
-        return listingsService.update(id, request, authHeader);
+        return listingsService.update(id, body, authHeader);
     }
 
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<String>> delete(
             @PathVariable Long id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader("Authorization") String authHeader
     ) {
         return listingsService.delete(id, authHeader);
     }

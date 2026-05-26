@@ -11,6 +11,8 @@ import ru.nsu.sdp.listings.exception.ListingException;
 import ru.nsu.sdp.listings.service.JwtService;
 import ru.nsu.sdp.listings.service.ListingService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/listings")
 @RequiredArgsConstructor
@@ -36,6 +38,16 @@ public class ListingController {
     ) {
         jwtService.extractUserIdFromHeader(authHeader);
         ListingDtos.ListingData data = listingService.getById(id);
+        return ResponseEntity.ok(ListingDtos.ApiResponse.ok(data));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ListingDtos.ApiResponse<List<ListingDtos.ListingData>>> getByUserId(
+            @PathVariable Long userId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        jwtService.extractUserIdFromHeader(authHeader);
+        List<ListingDtos.ListingData> data = listingService.getByUserId(userId);
         return ResponseEntity.ok(ListingDtos.ApiResponse.ok(data));
     }
 
