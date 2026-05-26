@@ -70,7 +70,19 @@ services:
     depends_on:
       - auth-service
       - profile-service
-
+      
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true 
+          
 volumes:
   postgres_data:
     name: "postgres_data"

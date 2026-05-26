@@ -3,11 +3,11 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-
 function figmaAssetResolver() {
   return {
     name: 'figma-asset-resolver',
-    resolveId(id) {
+    // Добавили явную типизацию : string для параметра id
+    resolveId(id: string) {
       if (id.startsWith('figma:asset/')) {
         const filename = id.replace('figma:asset/', '')
         return path.resolve(__dirname, 'src/assets', filename)
@@ -32,8 +32,15 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
+    port: 5173, // Явно фиксируем порт для докера
+    strictPort: true,
+    watch: {
+      usePolling: true, // Добавлено для стабильного Hot Reload внутри Docker-контейнера
+    },
     proxy: {
       '/api/': {
+        // Если запускаешь через docker-compose, вместо localhost:8000 
+        // можно будет указать имя сервиса бэкенда, например http://profile-service:8080
         target: process.env.VITE_BACKEND_PROXY_TARGET ?? 'http://localhost:8000',
         changeOrigin: true,
       },
