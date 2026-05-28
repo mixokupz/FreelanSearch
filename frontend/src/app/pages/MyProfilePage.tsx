@@ -113,7 +113,7 @@ export function MyProfilePage() {
             <div>
               <h1 className="text-4xl font-bold text-primary mb-3">Мой профиль</h1>
               <p className="text-muted-foreground">
-                Управляйте профилем, откликами и контрактами.
+                Управляйте своим профилем и списком услуг
               </p>
             </div>
 

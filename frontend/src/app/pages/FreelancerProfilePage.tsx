@@ -165,9 +165,9 @@ export function FreelancerProfilePage() {
 
               {/* Заглушка портфолио */}
               <div className="bg-card border border-border rounded-2xl p-6">
-                <h3 className="text-xl font-semibold text-foreground mb-6">Портфолио</h3>
+                <h3 className="text-xl font-semibold text-foreground mb-6">Услуги</h3>
                 <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
-                  Работы в портфолио не найдены.
+                  Услуги не найдены.
                 </div>
               </div>
 

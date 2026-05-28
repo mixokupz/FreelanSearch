@@ -8,11 +8,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Service
-@RequiredArgsConstructor
 public class ListingsService {
 
-    @Qualifier("listingsWebClient")
     private final WebClient webClient;
+
+    public ListingsService(@Qualifier("listingsWebClient") WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     public Mono<ResponseEntity<String>> create(
             String body,
@@ -31,12 +33,11 @@ public class ListingsService {
     }
 
     public Mono<ResponseEntity<String>> getById(
-            Long id,
-            String authHeader
+            Long id
+           
     ) {
         return webClient.get()
                 .uri("/api/v1/listings/{id}", id)
-                .header("Authorization", authHeader)
                 .exchangeToMono(response ->
                         response.bodyToMono(String.class)
                                 .defaultIfEmpty("")
@@ -76,12 +77,11 @@ public class ListingsService {
     }
 
     public Mono<ResponseEntity<String>> getByUserId(
-            Long userId,
-            String authHeader
+            Long userId
+           
     ) {
         return webClient.get()
                 .uri("/api/v1/listings/user/{userId}", userId)
-                .header("Authorization", authHeader)
                 .exchangeToMono(response ->
                         response.bodyToMono(String.class)
                                 .defaultIfEmpty("")
@@ -89,11 +89,9 @@ public class ListingsService {
                 );
     }
 
-    public Mono<ResponseEntity<String>> getAll(String authHeader) {
+     public Mono<ResponseEntity<String>> getAll() {
         var requestSpec = webClient.get().uri("/api/v1/listings");
-        if (authHeader != null) {
-            requestSpec.header("Authorization", authHeader);
-        }
+
         return requestSpec.exchangeToMono(response ->
                         response.bodyToMono(String.class)
                                 .defaultIfEmpty("")

@@ -13,11 +13,12 @@ public class ListingController {
 
     private final ListingsService listingsService;
 
+
     @GetMapping
     public Mono<ResponseEntity<String>> getAll(
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+           
     ) {
-        return listingsService.getAll(authHeader);
+        return listingsService.getAll();
     }
 
     @PostMapping
@@ -30,18 +31,18 @@ public class ListingController {
 
     @GetMapping("/{id}")
     public Mono<ResponseEntity<String>> getById(
-            @PathVariable Long id,
-            @RequestHeader("Authorization") String authHeader
+            @PathVariable Long id
+            
     ) {
-        return listingsService.getById(id, authHeader);
+        return listingsService.getById(id);
     }
 
     @GetMapping("/user/{userId}")
     public Mono<ResponseEntity<String>> getByUserId(
-            @PathVariable Long userId,
-            @RequestHeader("Authorization") String authHeader
+            @PathVariable Long userId
+        
     ) {
-        return listingsService.getByUserId(userId, authHeader);
+        return listingsService.getByUserId(userId);
     }
 
     @PutMapping("/{id}")
