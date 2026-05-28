@@ -2,6 +2,13 @@
 
 const BASE_URL = 'http://localhost:8080/api/v1'; 
 
+export class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token');
   
@@ -16,12 +23,11 @@ export async function request<T>(endpoint: string, options: RequestInit = {}): P
     headers,
   });
 
-  const responseData = await response.json();
+  const responseData = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-
-    const errorMessage = responseData?.message || `Ошибка сервера: ${response.status}`;
-    throw new Error(errorMessage);
+    const errorMessage = responseData?.message || responseData?.data?.message || '';
+    throw new ApiError(response.status, errorMessage);
   }
 
   return responseData as T;

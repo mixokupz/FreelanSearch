@@ -3,11 +3,14 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../api/userService';
+import { listingService } from '../../api/listingService';
 import { OwnProfileResponse, UpdateProfileRequest } from '../../types/user';
+import { ListingDetailsResponse, CreateListingRequest, UpdateListingRequest } from '../../types/listing';
 import {
   UserCircle, Building2, Star, Mail, Phone, MapPin, Edit,
-  XCircle, Save
+  XCircle, Save, Plus, Trash2, Edit3
 } from 'lucide-react';
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 // Безопасная функция форматирования рейтинга
 function formatRating(rating: number | null | undefined) {
@@ -26,7 +29,7 @@ export function MyProfilePage() {
 
   const [isFreelancer, setIsFreelancer] = useState(true);
 
-  // Стейты для редактирования (переведены на camelCase)
+  // Стейты для редактирования профиля
   const [isEditing, setIsEditing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -37,6 +40,21 @@ export function MyProfilePage() {
     avatarUrl: ''
   });
 
+  // Стейты для управления услугами
+  const [listings, setListings] = useState<ListingDetailsResponse[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
+  const [listingMode, setListingMode] = useState<'view' | 'create' | 'edit'>('view');
+  const [selectedListing, setSelectedListing] = useState<ListingDetailsResponse | null>(null);
+  const [listingForm, setListingForm] = useState<CreateListingRequest>({
+    title: '',
+    description: '',
+    price: 0,
+    priceType: 'fixed'
+  });
+  const [listingActionLoading, setListingActionLoading] = useState(false);
+  const [listingActionError, setListingActionError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!currentUser) return;
 
@@ -46,7 +64,6 @@ export function MyProfilePage() {
         const response = await userService.getMe();
         setProfile(response.data);
 
-        // Инициализируем форму новыми camelCase полями
         setFormData({
           displayName: response.data.displayName || '',
           bio: response.data.bio || '',
@@ -58,7 +75,7 @@ export function MyProfilePage() {
           setIsFreelancer(false);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить профиль');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -67,7 +84,26 @@ export function MyProfilePage() {
     fetchProfile();
   }, [currentUser]);
 
-  // Обработчик сохранения формы
+  // Загрузка собственных услуг
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchMyListings = async () => {
+      try {
+        setListingsLoading(true);
+        const response = await listingService.getListingsByUser(Number(currentUser.userId));
+        setListings(response.data);
+      } catch (err) {
+        setListingsError(getFriendlyErrorMessage(err));
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+
+    fetchMyListings();
+  }, [currentUser]);
+
+  // Обработчик сохранения профиля
   async function handleSaveChanges(e: React.FormEvent) {
     e.preventDefault();
     setActionLoading(true);
@@ -78,13 +114,13 @@ export function MyProfilePage() {
       setProfile(response.data);
       setIsEditing(false);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Не удалось сохранить изменения');
+      setActionError(getFriendlyErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
   }
 
-  // Сброс формы при отмене изменений
+  // Сброс формы при отмене изменений профиля
   function handleCancelEdit() {
     if (profile) {
       setFormData({
@@ -96,6 +132,70 @@ export function MyProfilePage() {
     }
     setIsEditing(false);
     setActionError(null);
+  }
+
+  // --- Функции для управления услугами ---
+
+  function openCreateListing() {
+    setListingForm({ title: '', description: '', price: 0, priceType: 'fixed' });
+    setListingMode('create');
+    setListingActionError(null);
+  }
+
+  function openEditListing(listing: ListingDetailsResponse) {
+    setListingForm({
+      title: listing.title,
+      description: listing.description,
+      price: listing.price,
+      priceType: listing.priceType as 'fixed' | 'hourly' | 'monthly'
+    });
+    setSelectedListing(listing);
+    setListingMode('edit');
+    setListingActionError(null);
+  }
+
+  async function handleSaveListing(e: React.FormEvent) {
+    e.preventDefault();
+    setListingActionLoading(true);
+    setListingActionError(null);
+
+    try {
+      if (listingMode === 'create') {
+        const response = await listingService.createListing(listingForm);
+        // Оптимистичное добавление новой услуги в список
+        setListings(prev => [...prev, response.data]);
+      } else {
+        // Добавляем текущий статус при обновлении, так как бэкенд его требует
+        const response = await listingService.updateListing(selectedListing!.id, {
+          ...listingForm,
+          status: selectedListing!.status
+        });
+        // Обновляем конкретную услугу в списке
+        setListings(prev => prev.map(item => item.id === response.data.id ? response.data : item));
+      }
+      
+      setListingMode('view');
+    } catch (err) {
+      setListingActionError(getFriendlyErrorMessage(err));
+    } finally {
+      setListingActionLoading(false);
+    }
+  }
+
+  async function handleDeleteListing(id: number) {
+    if (!confirm('Вы уверены, что хотите удалить эту услугу?')) return;
+    
+    setListingActionLoading(true);
+    setListingActionError(null);
+    try {
+      await listingService.deleteListing(id);
+      const response = await listingService.getListingsByUser(Number(currentUser?.userId));
+      setListings(response.data);
+    } catch (err) {
+      setListingActionError(getFriendlyErrorMessage(err));
+    } finally {
+      setListingActionLoading(false);
+    }
   }
 
   if (!currentUser) {
@@ -112,35 +212,11 @@ export function MyProfilePage() {
             <div>
               <h1 className="text-4xl font-bold text-primary mb-3">Мой профиль</h1>
               <p className="text-muted-foreground">
-                Управляйте профилем, откликами и контрактами.
+                Управляйте своим профилем и списком услуг
               </p>
             </div>
 
-            {/* Переключатель ролей */}
-            <div className="bg-card border border-border rounded-2xl p-2 flex gap-2">
-              <button
-                disabled={isEditing}
-                onClick={() => setIsFreelancer(true)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all disabled:opacity-50 ${isFreelancer
-                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                <UserCircle className="w-5 h-5" />
-                Фрилансер
-              </button>
-              <button
-                disabled={isEditing}
-                onClick={() => setIsFreelancer(false)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all disabled:opacity-50 ${!isFreelancer
-                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                <Building2 className="w-5 h-5" />
-                Заказчик
-              </button>
-            </div>
+           
           </div>
         </div>
 
@@ -281,7 +357,7 @@ export function MyProfilePage() {
                           value={formData.bio}
                           onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                           placeholder="Расскажите о своем опыте работы и проектах..."
-                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                          className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-y min-h-[120px]"
                         />
                       </div>
 
@@ -321,13 +397,150 @@ export function MyProfilePage() {
                         <p className="text-sm text-muted-foreground italic">Данные о навыках не найдены в текущем профиле.</p>
                       </div>
 
-                      {/* Заглушка для откликов */}
-                      <div className="bg-card border border-border rounded-2xl p-6">
-                        <h3 className="text-xl font-semibold text-foreground mb-4">Мои отклики и контракты</h3>
-                        <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
-                          Активные контракты и отклики не найдены.
-                        </div>
+                    {/* Мои услуги */}
+                    <div className="bg-card border border-border rounded-2xl p-6">
+                      <div className="mb-6 flex items-center justify-between">
+                        <h3 className="text-xl font-semibold text-foreground">Мои услуги</h3>
+                        {listingMode === 'view' && (
+                          <button
+                            onClick={openCreateListing}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                          >
+                            <Plus className="w-4 h-4" />
+                            Добавить услугу
+                          </button>
+                        )}
                       </div>
+
+                      {listingMode !== 'view' ? (
+                        /* ФОРМА СОЗДАНИЯ / РЕДАКТИРОВАНИЯ УСЛУГИ */
+                        <form onSubmit={handleSaveListing} className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Название услуги</label>
+                            <input
+                              type="text"
+                              required
+                              value={listingForm.title}
+                              onChange={(e) => setListingForm({ ...listingForm, title: e.target.value })}
+                              placeholder="Напр: Разработка сайтов на React"
+                              className="w-full px-4 py-2 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Описание</label>
+                            <textarea
+                              required
+                              rows={5}
+                              value={listingForm.description}
+                              onChange={(e) => setListingForm({ ...listingForm, description: e.target.value })}
+                              placeholder="Подробно опишите, что вы предлагаете..."
+                              className="w-full px-4 py-2 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-y min-h-[120px]"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1.5 block">Цена</label>
+                              <input
+                                type="number"
+                                required
+                                min={0}
+                                value={listingForm.price}
+                                onChange={(e) => setListingForm({ ...listingForm, price: Number(e.target.value) })}
+                                className="w-full px-4 py-2 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1.5 block">Тип цены</label>
+                              <select
+                                value={listingForm.priceType}
+                                onChange={(e) => setListingForm({ ...listingForm, priceType: e.target.value as any })}
+                                className="w-full px-4 py-2 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                              >
+                                <option value="fixed">Фиксированная</option>
+                                <option value="hourly">Почасовая</option>
+                                <option value="monthly">Месячная</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {listingActionError && (
+                            <div className="text-xs text-destructive flex items-center gap-1">
+                              <XCircle className="w-3 h-3" />
+                              {listingActionError}
+                            </div>
+                          )}
+
+                          <div className="flex gap-3 pt-2">
+                            <button
+                              type="submit"
+                              disabled={listingActionLoading}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all disabled:opacity-70 font-medium text-sm"
+                            >
+                              <Save className="w-4 h-4" />
+                              {listingActionLoading ? 'Сохранение...' : listingMode === 'create' ? 'Создать' : 'Сохранить'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setListingMode('view')}
+                              className="px-4 py-2 bg-muted border border-border text-foreground rounded-lg hover:bg-border transition-all text-sm font-medium"
+                            >
+                              Отмена
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        /* СПИСОК УСЛУГ */
+                        <div className="space-y-3">
+                          {listingsLoading && <p className="text-sm text-muted-foreground text-center py-4">Загрузка услуг...</p>}
+                          
+                          {!listingsLoading && listingsError && (
+                            <div className="text-sm text-destructive p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                              {listingsError}
+                            </div>
+                          )}
+
+                          {!listingsLoading && !listingsError && listings.length === 0 && (
+                            <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
+                              У вас пока нет созданных услуг.
+                            </div>
+                          )}
+
+                          {!listingsLoading && listings.map((listing) => (
+                            <div
+                              key={listing.id}
+                              className="flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl hover:bg-muted/50 transition-all group"
+                            >
+                              <div className="min-w-0">
+                                <h4 className="text-sm font-semibold text-foreground truncate">{listing.title}</h4>
+                                <p className="text-xs text-muted-foreground truncate">{listing.description}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs font-medium text-primary">{listing.price} ₽</span>
+                                  <span className="text-[10px] text-muted-foreground capitalize">({listing.priceType})</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 ml-4">
+                                <button
+                                  onClick={() => openEditListing(listing)}
+                                  className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
+                                  title="Редактировать"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteListing(listing.id)}
+                                  className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
+                                  title="Удалить"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     </div>
                   )}
                 </div>

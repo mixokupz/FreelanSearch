@@ -1,0 +1,67 @@
+# Получение JWT (через BFF auth)
+curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@mail.com","password":"123456"}' | jq .
+
+TOKEN="твой_токен"
+
+BFF_URL="http://localhost:8080"
+LISTINGS_URL="http://localhost:8083"
+
+# Формат ответа: {"success": true|false, "data": ...}
+
+# -----------------------------
+# Через BFF (порт 8080)
+# -----------------------------
+
+# Создание объявления
+curl -s -X POST "$BFF_URL/api/v1/listings" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Настройка роутера","description":"Помогу настроить Wi-Fi и роутер дома.","price":1500,"priceType":"fixed"}' | jq .
+
+# Получение объявления по id
+curl -s "$BFF_URL/api/v1/listings/1" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Получение объявлений пользователя
+curl -s "$BFF_URL/api/v1/listings/user/42" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Обновление объявления
+curl -s -X PUT "$BFF_URL/api/v1/listings/1" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Настройка роутера и Wi-Fi","description":"Помогу настроить роутер, Wi-Fi и сеть дома.","price":2000,"priceType":"fixed","status":"active"}' | jq .
+
+# Удаление объявления
+curl -s -X DELETE "$BFF_URL/api/v1/listings/1" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# -----------------------------
+# Напрямую через listings-service (порт 8083)
+# -----------------------------
+
+# Создание объявления
+curl -s -X POST "$LISTINGS_URL/api/v1/listings" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Настройка роутера","description":"Помогу настроить Wi-Fi и роутер дома.","price":1500,"priceType":"fixed"}' | jq .
+
+# Получение объявления по id
+curl -s "$LISTINGS_URL/api/v1/listings/1" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Получение объявлений пользователя
+curl -s "$LISTINGS_URL/api/v1/listings/user/42" \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Обновление объявления
+curl -s -X PUT "$LISTINGS_URL/api/v1/listings/1" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Настройка роутера и Wi-Fi","description":"Помогу настроить роутер, Wi-Fi и сеть дома.","price":2000,"priceType":"fixed","status":"active"}' | jq .
+
+# Удаление объявления
+curl -s -X DELETE "$LISTINGS_URL/api/v1/listings/1" \
+  -H "Authorization: Bearer $TOKEN" | jq .

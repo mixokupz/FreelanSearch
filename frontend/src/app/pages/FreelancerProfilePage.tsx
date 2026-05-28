@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Briefcase, Mail, Phone, Star, MapPin } from 'lucide-react';
 import { userService } from '../../api/userService';
+import { listingService } from '../../api/listingService';
 import { PublicProfileResponse } from '../../types/user';
+import { ListingDetailsResponse } from '../../types/listing';
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 function formatRating(rating: number | null) {
   return rating === null || rating === 0 ? 'Новый' : rating.toFixed(1);
@@ -19,6 +22,11 @@ export function FreelancerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Стейты для загрузки услуг специалиста
+  const [listings, setListings] = useState<ListingDetailsResponse[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!Number.isFinite(userId)) return;
 
@@ -28,13 +36,32 @@ export function FreelancerProfilePage() {
         const response = await userService.getPublicProfile(userId);
         setFreelancer(response.data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить профиль специалиста');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }
     };
 
     fetchPublicProfile();
+  }, [userId]);
+
+  // Загрузка услуг специалиста
+  useEffect(() => {
+    if (!Number.isFinite(userId)) return;
+
+    const fetchListings = async () => {
+      try {
+        setListingsLoading(true);
+        const response = await listingService.getListingsByUser(userId);
+        setListings(response.data);
+      } catch (err) {
+        setListingsError(getFriendlyErrorMessage(err));
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+
+    fetchListings();
   }, [userId]);
 
   // Валидация ID в параметрах урла
@@ -139,12 +166,19 @@ export function FreelancerProfilePage() {
                 </p>
               </div>
 
-              {/* Заглушка контактов (в PublicProfileResponse скрыты email и phone) */}
+              {/* Контакты */}
               <div className="bg-card border border-border rounded-2xl p-6">
                 <h3 className="text-xl font-semibold text-foreground mb-4">Контакты</h3>
-                <p className="text-sm text-muted-foreground italic">
-                  Контактные данные доступны только после отклика на проект или авторизованным клиентам.
-                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Mail className="w-5 h-5 text-primary" />
+                    <span className="text-sm">{freelancer.email || 'Email не указан'}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Phone className="w-5 h-5 text-primary" />
+                    <span className="text-sm">{freelancer.phone || 'Телефон не указан'}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Заглушка навыков */}
@@ -155,12 +189,39 @@ export function FreelancerProfilePage() {
                 </p>
               </div>
 
-              {/* Заглушка портфолио */}
+              {/* Список услуг */}
               <div className="bg-card border border-border rounded-2xl p-6">
-                <h3 className="text-xl font-semibold text-foreground mb-6">Портфолио</h3>
-                <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
-                  Работы в портфолио не найдены.
-                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-6">Услуги</h3>
+                
+                {listingsLoading && <p className="text-sm text-muted-foreground text-center py-4">Загрузка услуг...</p>}
+                
+                {!listingsLoading && listingsError && (
+                  <div className="text-sm text-destructive p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                    {listingsError}
+                  </div>
+                )}
+
+                {!listingsLoading && !listingsError && listings.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+                    Услуги не найдены.
+                  </div>
+                )}
+
+                {!listingsLoading && listings.map((listing) => (
+                  <div
+                    key={listing.id}
+                    className="flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl hover:bg-muted/50 transition-all mb-3"
+                  >
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-semibold text-foreground truncate">{listing.title}</h4>
+                      <p className="text-xs text-muted-foreground truncate">{listing.description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-medium text-primary">{listing.price} ₽</span>
+                        <span className="text-[10px] text-muted-foreground capitalize">({listing.priceType})</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
             </div>

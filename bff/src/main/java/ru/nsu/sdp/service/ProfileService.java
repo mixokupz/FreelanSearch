@@ -58,4 +58,17 @@ public class ProfileService {
                                 .map(body -> ResponseEntity.status(response.statusCode()).body(body))
                 );
     }
+
+    /**
+     * GET /api/v1/profiles → profile-service
+     */
+    public Mono<ResponseEntity<String>> getAllPublicProfiles() {
+        return profileWebClient.get()
+                .uri("/api/v1/profiles")
+                .exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(body -> ResponseEntity.status(response.statusCode()).body(body))
+                );
+    }
 }

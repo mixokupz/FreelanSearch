@@ -4,8 +4,11 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
+ENV GRADLE_OPTS="-Dorg.gradle.wrapper.networkTimeout=600000"
+RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
+
 COPY src src
-RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
+RUN ./gradlew bootJar -x test --no-daemon
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app

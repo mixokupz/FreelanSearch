@@ -46,6 +46,22 @@ public class ProfileService {
     }
 
     /**
+     * Получение списка всех публичных профилей активных пользователей.
+     *
+     * @return список PublicProfileResponse
+     */
+    public java.util.List<ProfileDtos.PublicProfileResponse> getAllPublicProfiles() {
+        return userRepository.findAll().stream()
+                .filter(user -> !user.isBlocked())
+                .map(user -> {
+                    Profile profile = profileRepository.findByUserId(user.getId()).orElse(null);
+                    return profile != null ? mapToPublicProfileResponse(user, profile) : null;
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    /**
      * Обновление собственного профиля.
      * Обновляются только поля display_name, avatar_url, bio, city.
      * Таблица users НЕ изменяется.
@@ -138,6 +154,8 @@ public class ProfileService {
     private ProfileDtos.PublicProfileResponse mapToPublicProfileResponse(User user, Profile profile) {
         return ProfileDtos.PublicProfileResponse.builder()
                 .id(user.getId())
+                .email(user.getEmail())
+                .phone(user.getPhone())
                 .role(user.getRole())
                 .displayName(profile.getDisplayName())
                 .avatarUrl(profile.getAvatarUrl())

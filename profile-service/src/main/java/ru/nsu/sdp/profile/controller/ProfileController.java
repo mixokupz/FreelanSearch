@@ -53,6 +53,16 @@ public class ProfileController {
         return ResponseEntity.ok(ProfileDtos.ApiResponse.ok(profile));
     }
 
+    /**
+     * GET /api/v1/profiles
+     * Возвращает список всех публичных профилей.
+     */
+    @GetMapping
+    public ResponseEntity<ProfileDtos.ApiResponse<java.util.List<ProfileDtos.PublicProfileResponse>>> getAllPublicProfiles() {
+        java.util.List<ProfileDtos.PublicProfileResponse> profiles = profileService.getAllPublicProfiles();
+        return ResponseEntity.ok(ProfileDtos.ApiResponse.ok(profiles));
+    }
+
     // ──────────────── Обработка ошибок ────────────────
 
     @ExceptionHandler(ProfileException.InvalidToken.class)
