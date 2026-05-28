@@ -13,11 +13,8 @@ public class ListingController {
 
     private final ListingsService listingsService;
 
-
     @GetMapping
-    public Mono<ResponseEntity<String>> getAll(
-           
-    ) {
+    public Mono<ResponseEntity<String>> getAll() {
         return listingsService.getAll();
     }
 
@@ -32,7 +29,6 @@ public class ListingController {
     @GetMapping("/{id}")
     public Mono<ResponseEntity<String>> getById(
             @PathVariable Long id
-            
     ) {
         return listingsService.getById(id);
     }
@@ -40,7 +36,6 @@ public class ListingController {
     @GetMapping("/user/{userId}")
     public Mono<ResponseEntity<String>> getByUserId(
             @PathVariable Long userId
-        
     ) {
         return listingsService.getByUserId(userId);
     }

@@ -32,30 +32,23 @@ public class ListingController {
     }
 
     @GetMapping
-    public ResponseEntity<ListingDtos.ApiResponse<List<ListingDtos.ListingData>>> getAll(
-            
-    ) {
-    
+    public ResponseEntity<ListingDtos.ApiResponse<List<ListingDtos.ListingData>>> getAll() {
         List<ListingDtos.ListingData> data = listingService.getAll();
         return ResponseEntity.ok(ListingDtos.ApiResponse.ok(data));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ListingDtos.ApiResponse<ListingDtos.ListingData>> getById(
-            @PathVariable Long id,
-            
+            @PathVariable Long id
     ) {
-        
         ListingDtos.ListingData data = listingService.getById(id);
         return ResponseEntity.ok(ListingDtos.ApiResponse.ok(data));
     }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<ListingDtos.ApiResponse<List<ListingDtos.ListingData>>> getByUserId(
-            @PathVariable Long userId,
-           
+            @PathVariable Long userId
     ) {
-      
         List<ListingDtos.ListingData> data = listingService.getByUserId(userId);
         return ResponseEntity.ok(ListingDtos.ApiResponse.ok(data));
     }
