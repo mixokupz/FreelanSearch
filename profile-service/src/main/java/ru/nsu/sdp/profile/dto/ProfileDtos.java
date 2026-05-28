@@ -34,13 +34,15 @@ public class ProfileDtos {
     }
 
     /**
-     * Публичный профиль другого пользователя — без email и phone.
+     * Публичный профиль другого пользователя — теперь включает email и phone.
      */
     @Data
     @Builder
     public static class PublicProfileResponse {
-        // Поля из users (только публичные)
+        // Поля из users
         private Long id;
+        private String email;
+        private String phone;
         private String role;
 
         // Поля из profiles

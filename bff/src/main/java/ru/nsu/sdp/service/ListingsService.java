@@ -88,4 +88,16 @@ public class ListingsService {
                                 .map(body -> ResponseEntity.status(response.statusCode()).body(body))
                 );
     }
+
+    public Mono<ResponseEntity<String>> getAll(String authHeader) {
+        var requestSpec = webClient.get().uri("/api/v1/listings");
+        if (authHeader != null) {
+            requestSpec.header("Authorization", authHeader);
+        }
+        return requestSpec.exchangeToMono(response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(body -> ResponseEntity.status(response.statusCode()).body(body))
+                );
+    }
 }

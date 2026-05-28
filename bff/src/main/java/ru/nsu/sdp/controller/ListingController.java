@@ -13,6 +13,13 @@ public class ListingController {
 
     private final ListingsService listingsService;
 
+    @GetMapping
+    public Mono<ResponseEntity<String>> getAll(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        return listingsService.getAll(authHeader);
+    }
+
     @PostMapping
     public Mono<ResponseEntity<String>> create(
             @RequestBody String body,

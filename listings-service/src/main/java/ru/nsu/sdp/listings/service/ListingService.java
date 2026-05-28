@@ -44,6 +44,13 @@ public class ListingService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ListingDtos.ListingData> getAll() {
+        return listingRepository.findAll().stream()
+                .map(ListingDtos.ListingData::fromEntity)
+                .toList();
+    }
+
     @Transactional
     public ListingDtos.ListingData update(Long id, ListingDtos.UpdateListingRequest request, Long userId) {
         Listing listing = listingRepository.findById(id)

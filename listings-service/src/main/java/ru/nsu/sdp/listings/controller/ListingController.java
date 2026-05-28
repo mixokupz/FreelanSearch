@@ -31,6 +31,17 @@ public class ListingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ListingDtos.ApiResponse.ok(data));
     }
 
+    @GetMapping
+    public ResponseEntity<ListingDtos.ApiResponse<List<ListingDtos.ListingData>>> getAll(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        if (authHeader != null) {
+            jwtService.extractUserIdFromHeader(authHeader);
+        }
+        List<ListingDtos.ListingData> data = listingService.getAll();
+        return ResponseEntity.ok(ListingDtos.ApiResponse.ok(data));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ListingDtos.ApiResponse<ListingDtos.ListingData>> getById(
             @PathVariable Long id,

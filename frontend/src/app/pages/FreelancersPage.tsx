@@ -121,7 +121,7 @@ export function FreelancersPage() {
                     </div>
                   </div>
 
-                  {/* Геолокация */}
+                  {/* Геолокация и контакты */}
                   <div className="mb-4 flex flex-wrap gap-2">
                     {freelancer.city ? (
                       <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
@@ -131,6 +131,16 @@ export function FreelancersPage() {
                     ) : (
                       <span className="rounded-lg bg-muted/50 border border-border px-3 py-1 text-xs text-muted-foreground italic">
                         Город не указан
+                      </span>
+                    )}
+                    {freelancer.email && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+                        {freelancer.email}
+                      </span>
+                    )}
+                    {freelancer.phone && (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+                        {freelancer.phone}
                       </span>
                     )}
                   </div>

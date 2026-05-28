@@ -18,6 +18,8 @@ export interface OwnProfileResponse {
 
 export interface PublicProfileResponse {
   id: number;
+  email: string;
+  phone: string | null;
   role: string;
   displayName: string;
   avatarUrl: string | null;

@@ -47,4 +47,13 @@ public class UserController {
     public Mono<ResponseEntity<String>> getPublicProfile(@PathVariable Long userId) {
         return profileService.getPublicProfile(userId);
     }
+
+    /**
+     * GET /api/v1/users
+     * Возвращает список всех публичных профилей.
+     */
+    @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<String>> getAllUsers() {
+        return profileService.getAllPublicProfiles();
+    }
 }
