@@ -1,6 +1,7 @@
 // src/app/pages/OrdersPage.tsx
 import { useEffect, useState } from 'react';
 import { Clock, DollarSign, Tag, User, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
 import { listingService } from '../../api/listingService';
 import { ListingDetailsResponse } from '../../types/listing';
@@ -114,7 +115,12 @@ export function OrdersPage() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <User className="h-4 w-4 text-primary" />
-                        <span className="text-xs italic">Заказчик в системе</span>
+                        <Link 
+                          to={`/freelancer/${order.userId}`} 
+                          className="text-xs italic text-primary hover:underline"
+                        >
+                          Профиль исполнителя
+                        </Link>
                       </div>
                     </div>
 
