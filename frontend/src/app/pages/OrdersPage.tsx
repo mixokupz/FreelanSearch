@@ -95,12 +95,7 @@ export function OrdersPage() {
                     <h3 className="mb-3 text-xl font-semibold text-foreground">{order.title}</h3>
                     <p className="mb-4 leading-relaxed text-muted-foreground">{order.description}</p>
 
-                    {/* Заглушка навыков (так как в ListingDetailsResponse их нет) */}
-                    <div className="mb-5 flex flex-wrap gap-2">
-                      <span className="rounded-lg bg-muted/60 border border-border px-3 py-1 text-xs text-muted-foreground italic">
-                        Требуемые навыки уточняйте у автора
-                      </span>
-                    </div>
+                   
 
                     {/* Финансовые показатели */}
                     <div className="mb-5 flex flex-wrap gap-6 text-sm">

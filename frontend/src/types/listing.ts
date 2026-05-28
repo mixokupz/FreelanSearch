@@ -12,3 +12,14 @@ export interface ListingsListApiResponse {
   success: boolean;
   data: ListingDetailsResponse[];
 }
+
+export interface CreateListingRequest {
+  title: string;
+  description: string;
+  price: number;
+  priceType: 'fixed' | 'hourly' | 'monthly';
+}
+
+export interface UpdateListingRequest extends Partial<CreateListingRequest> {
+  status?: string;
+}
