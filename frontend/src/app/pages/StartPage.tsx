@@ -10,7 +10,7 @@ export function StartPage() {
             FreelanSearch
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Платформа для поиска фрилансеров и заказов
+            Платформа для поиска фрилансеров и услуг
           </p>
         </div>
 
@@ -33,8 +33,8 @@ export function StartPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="relative flex flex-col items-center gap-3">
               <Briefcase className="w-12 h-12" />
-              <span className="text-2xl font-semibold">Заказы</span>
-              <span className="text-sm text-white/80">Найти проект</span>
+              <span className="text-2xl font-semibold">Услуги</span>
+              <span className="text-sm text-white/80">Найти нужную услугу</span>
             </div>
           </Link>
         </div>

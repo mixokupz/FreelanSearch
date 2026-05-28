@@ -8,6 +8,7 @@ import {
   UserCircle, Building2, Star, Mail, Phone, MapPin, Edit,
   XCircle, Save
 } from 'lucide-react';
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 // Безопасная функция форматирования рейтинга
 function formatRating(rating: number | null | undefined) {
@@ -46,7 +47,7 @@ export function MyProfilePage() {
         const response = await userService.getMe();
         setProfile(response.data);
 
-        // Инициализируем форму новыми camelCase полями
+      
         setFormData({
           displayName: response.data.displayName || '',
           bio: response.data.bio || '',
@@ -58,7 +59,7 @@ export function MyProfilePage() {
           setIsFreelancer(false);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить профиль');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -78,7 +79,7 @@ export function MyProfilePage() {
       setProfile(response.data);
       setIsEditing(false);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Не удалось сохранить изменения');
+      setActionError(getFriendlyErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -116,31 +117,7 @@ export function MyProfilePage() {
               </p>
             </div>
 
-            {/* Переключатель ролей */}
-            <div className="bg-card border border-border rounded-2xl p-2 flex gap-2">
-              <button
-                disabled={isEditing}
-                onClick={() => setIsFreelancer(true)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all disabled:opacity-50 ${isFreelancer
-                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                <UserCircle className="w-5 h-5" />
-                Фрилансер
-              </button>
-              <button
-                disabled={isEditing}
-                onClick={() => setIsFreelancer(false)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all disabled:opacity-50 ${!isFreelancer
-                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
-                  }`}
-              >
-                <Building2 className="w-5 h-5" />
-                Заказчик
-              </button>
-            </div>
+           
           </div>
         </div>
 
@@ -323,9 +300,9 @@ export function MyProfilePage() {
 
                       {/* Заглушка для откликов */}
                       <div className="bg-card border border-border rounded-2xl p-6">
-                        <h3 className="text-xl font-semibold text-foreground mb-4">Мои отклики и контракты</h3>
+                        <h3 className="text-xl font-semibold text-foreground mb-4">Мои услуги</h3>
                         <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
-                          Активные контракты и отклики не найдены.
+                          Активные услуги не найдены.
                         </div>
                       </div>
                     </div>

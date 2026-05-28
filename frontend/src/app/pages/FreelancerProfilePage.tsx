@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router';
 import { ArrowLeft, Briefcase, Mail, Phone, Star, MapPin } from 'lucide-react';
 import { userService } from '../../api/userService';
 import { PublicProfileResponse } from '../../types/user';
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 function formatRating(rating: number | null) {
   return rating === null || rating === 0 ? 'Новый' : rating.toFixed(1);
@@ -28,7 +29,7 @@ export function FreelancerProfilePage() {
         const response = await userService.getPublicProfile(userId);
         setFreelancer(response.data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить профиль специалиста');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }

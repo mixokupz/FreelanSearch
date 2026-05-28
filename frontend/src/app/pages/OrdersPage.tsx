@@ -4,6 +4,7 @@ import { Clock, DollarSign, Tag, User, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { listingService } from '../../api/listingService';
 import { ListingDetailsResponse } from '../../types/listing';
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 // Хелпер форматирования валюты (заменяем импорт, если старый удален)
 function formatMoney(amount: number) {
@@ -33,7 +34,7 @@ export function OrdersPage() {
         const activeListings = response.data.filter(item => item.status === 'active');
         setListings(activeListings);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось получить список объявлений');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -57,7 +58,7 @@ export function OrdersPage() {
       
       setRespondedOrders((current) => new Set([...current, orderId]));
     } catch (submitErrorValue) {
-      setSubmitError('Не удалось отправить отклик');
+      setSubmitError(getFriendlyErrorMessage(submitErrorValue));
     } finally {
       setSubmittingOrderId(null);
     }

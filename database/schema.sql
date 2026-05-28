@@ -217,21 +217,21 @@ CREATE TABLE support_tickets (
 );
 
 INSERT INTO users (email, phone, password_hash, auth_provider, auth_provider_id, role, is_blocked) VALUES
-('ivan.petrov@gmail.com',      '+79001234501', '$2b$10$hash01', 'local',    NULL,          'user',  FALSE),
-('maria.sidorova@mail.ru',     '+79001234502', '$2b$10$hash02', 'local',    NULL,          'user',  FALSE),
+('ivan.petrov@gmail.com',      '+79001234501', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
+('maria.sidorova@mail.ru',     '+79001234502', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
 ('alex.volkov@yandex.ru',      NULL,           NULL,            'google',   'g_uid_003',   'user',  FALSE),
-('olga.novikova@gmail.com',    '+79001234504', '$2b$10$hash04', 'local',    NULL,          'user',  FALSE),
-('dmitry.kozlov@mail.ru',      '+79001234505', '$2b$10$hash05', 'local',    NULL,          'user',  FALSE),
+('olga.novikova@gmail.com',    '+79001234504', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
+('dmitry.kozlov@mail.ru',      '+79001234505', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
 ('ekaterina.smirnova@ya.ru',   NULL,           NULL,            'yandex',   'y_uid_006',   'user',  FALSE),
-('sergey.morozov@gmail.com',   '+79001234507', '$2b$10$hash07', 'local',    NULL,          'user',  FALSE),
-('anna.popova@mail.ru',        '+79001234508', '$2b$10$hash08', 'local',    NULL,          'user',  FALSE),
+('sergey.morozov@gmail.com',   '+79001234507', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
+('anna.popova@mail.ru',        '+79001234508', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
 ('nikolay.lebedev@gmail.com',  NULL,           NULL,            'google',   'g_uid_009',   'user',  FALSE),
-('yuliya.komarova@ya.ru',      '+79001234510', '$2b$10$hash10', 'local',    NULL,          'user',  FALSE),
-('pavel.orlov@gmail.com',      '+79001234511', '$2b$10$hash11', 'local',    NULL,          'user',  FALSE),
+('yuliya.komarova@ya.ru',      '+79001234510', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
+('pavel.orlov@gmail.com',      '+79001234511', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
 ('tatyana.golova@mail.ru',     NULL,           NULL,            'vk',       'vk_uid_012',  'user',  FALSE),
-('artem.sokolov@gmail.com',    '+79001234513', '$2b$10$hash13', 'local',    NULL,          'user',  FALSE),
-('oksana.fedorova@ya.ru',      '+79001234514', '$2b$10$hash14', 'local',    NULL,          'user',  FALSE),
-('admin@platform.ru',          '+79009999999', '$2b$10$hash15', 'local',    NULL,          'admin', FALSE);
+('artem.sokolov@gmail.com',    '+79001234513', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
+('oksana.fedorova@ya.ru',      '+79001234514', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'user',  FALSE),
+('admin@platform.ru',          '+79009999999', '$2b$12$hC2bVCgLHLPVyA0xURLB9OJEqSCUVPoH352x1IHwT11teoyIUobA6', 'local',    NULL,          'admin', FALSE);
 
 INSERT INTO profiles (user_id, display_name, avatar_url, bio, city, avg_rating, reviews_count) VALUES
 (1,  'Иван Петров',       'https://cdn.example.com/av/1.jpg',  'Сантехник, 10 лет опыта',               'Москва',          4.80, 24),

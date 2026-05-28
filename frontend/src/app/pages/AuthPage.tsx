@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { Mail, Lock, User, ArrowRight, LogIn, UserPlus, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext'; 
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,7 +26,7 @@ export function AuthPage() {
 
       navigate(user.userId ? '/my-profile' : '/');
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Не удалось выполнить действие');
+      setError(getFriendlyErrorMessage(submitError));
     } finally {
       setSubmitting(false);
     }

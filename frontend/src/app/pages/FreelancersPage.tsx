@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../api/userService';
 import { PublicProfileResponse } from '../../types/user';
 import { ArrowRight, Star, MapPin, UserCheck } from 'lucide-react';
+import { getFriendlyErrorMessage } from '../../api/errorUtils';
 
 // Безопасная функция форматирования рейтинга
 function formatRating(rating: number | null | undefined) {
@@ -37,7 +38,7 @@ export function FreelancersPage() {
 
         setFreelancers(list);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить список специалистов');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }
