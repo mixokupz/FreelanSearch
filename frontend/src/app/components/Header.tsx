@@ -1,73 +1,55 @@
-import { Link } from "react-router";
-import { Search, Menu } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { useState } from "react";
+import { Link, useLocation } from 'react-router';
+import { Zap, User, LogIn, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const { user: currentUser, logout } = useAuth();
+  const isAuthPage = location.pathname === '/auth';
 
   return (
-    <header className="border-b bg-white sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold">FL</span>
-          </div>
-          <span className="text-xl font-bold">FreelanceHub</span>
-        </Link>
-
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/search" className="hover:text-blue-600">
-            Найти фрилансера
-          </Link>
-          <Link to="/search" className="hover:text-blue-600">
-            Услуги
-          </Link>
-          <Link to="/dashboard" className="hover:text-blue-600">
-            Личный кабинет
-          </Link>
-        </nav>
-
-        <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" asChild>
-            <Link to="/login">Войти</Link>
-          </Button>
-          <Button asChild>
-            <Link to="/register">Регистрация</Link>
-          </Button>
-        </div>
-
-        <button
-          className="md:hidden"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-      </div>
-
-      {isMenuOpen && (
-        <div className="md:hidden border-t bg-white">
-          <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
-            <Link to="/search" className="hover:text-blue-600">
-              Найти фрилансера
-            </Link>
-            <Link to="/search" className="hover:text-blue-600">
-              Услуги
-            </Link>
-            <Link to="/dashboard" className="hover:text-blue-600">
-              Личный кабинет
-            </Link>
-            <div className="flex flex-col gap-2 pt-2 border-t">
-              <Button variant="ghost" asChild>
-                <Link to="/login">Войти</Link>
-              </Button>
-              <Button asChild>
-                <Link to="/register">Регистрация</Link>
-              </Button>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Zap className="w-6 h-6 text-white" />
             </div>
-          </nav>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">FreelanSearch</span>
+          </Link>
+          {!isAuthPage && (
+            <div className="flex items-center gap-3">
+              {!currentUser && (
+                <Link
+                  to="/auth"
+                  className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all hover:scale-105"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Вход
+                </Link>
+              )}
+              {currentUser && (
+                <>
+                  <Link
+                    to="/my-profile"
+                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all hover:scale-105"
+                  >
+                    <User className="w-4 h-4" />
+                    Мой профиль
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-xl hover:bg-muted transition-all"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Выйти
+                  </button>
+                </>
+              )}
+            </div>)}
         </div>
-      )}
+      </div>
     </header>
   );
 }
