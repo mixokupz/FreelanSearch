@@ -1,0 +1,20 @@
+# Регистрация
+curl -s -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@mail.com","password":"123456","name":"Иван"}' | jq .
+
+TOKEN="твой_токен"
+
+# Свой профиль через BFF
+curl -s http://localhost:8080/api/v1/users/me \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# Обновление через BFF
+curl -s -X PUT http://localhost:8080/api/v1/users/me \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"displayName":"Иван Фрилансер","city":"Москва"}' | jq .
+
+# Публичный профиль через BFF
+curl -s http://localhost:8080/api/v1/users/1 | jq .
+
