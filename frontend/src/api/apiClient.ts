@@ -1,5 +1,7 @@
 
 
+import { v4 as uuidv4 } from 'uuid';
+
 const BASE_URL = 'http://localhost:8080/api/v1'; 
 
 export class ApiError extends Error {
@@ -14,6 +16,7 @@ export async function request<T>(endpoint: string, options: RequestInit = {}): P
   
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
+  headers.set('X-B3-TraceId', uuidv4());
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
