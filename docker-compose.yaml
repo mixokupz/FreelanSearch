@@ -19,6 +19,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - elk_default
 
   auth-service:
     container_name: auth-service
@@ -38,6 +40,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - elk_default
 
   profile-service:
     container_name: profile-service
@@ -56,6 +60,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - elk_default
  
   listings-service:
     container_name: listings-service
@@ -75,6 +81,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - elk_default
 
   bff:
     container_name: bff
@@ -91,6 +99,8 @@ services:
       - auth-service
       - profile-service
       - listings-service
+    networks:
+      - elk_default
       
   frontend:
     build:
@@ -102,8 +112,14 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - CHOKIDAR_USEPOLLING=true 
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - elk_default 
           
 volumes:
   postgres_data:
     name: "postgres_data"
+
+networks:
+  elk_default:
+    external: true

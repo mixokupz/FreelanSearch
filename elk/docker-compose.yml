@@ -1,0 +1,52 @@
+services:
+  elasticsearch: # Хранилище логов и поиск по данным
+    image: elasticsearch:8.12.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false  # Отключаем встроенную аутентификацию
+      - xpack.security.http.ssl.enabled=false # Отключаем https
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./elastic-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://elasticsearch:9200/_cluster/health | grep -E -q '\"status\":\"(green|yellow)\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - elk_default
+
+  logstash: # Прием, обработка и передача логов в Elasticsearch
+    image: logstash:8.12.0
+    ports:
+      - "5044:5044"
+      - "5045:5045"
+      - "5146:5146/udp"
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - elk_default
+
+  kibana: # Визуализация и анализ данных из Elasticsearch
+    image: kibana:8.12.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://kibana:5601/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
+    networks:
+      - elk_default
+networks:
+  elk_default:
+    external: true
