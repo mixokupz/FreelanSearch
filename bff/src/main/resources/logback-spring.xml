@@ -6,6 +6,8 @@
         <destination>logstash:5045</destination>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"source":"bff"}</customFields>
+            <includeMdc>true</includeMdc>
+            <includeMdcKeyName>requestId</includeMdcKeyName>
         </encoder>
         <keepAliveDuration>5 minutes</keepAliveDuration>
     </appender>

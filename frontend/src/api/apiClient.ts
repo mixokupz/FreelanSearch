@@ -16,7 +16,9 @@ export async function request<T>(endpoint: string, options: RequestInit = {}): P
   
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
-  headers.set('X-B3-TraceId', uuidv4());
+  const requestId = uuidv4();
+  headers.set('X-Request-Id', requestId);
+  headers.set('X-B3-TraceId', requestId);
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
